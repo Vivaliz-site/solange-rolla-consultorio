@@ -182,6 +182,39 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
 
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-01 — Fiscal mock E2E unique synthetic CPF (#98/PR #309)
+
+- Base SHA: b43c429b3b1bd2e7bfd511dbf19a3d8329053e98
+- Impacto: `tests/e2e/fiscal-mock-operations.spec.ts` uses the same generated, valid **synthetic CPF** in `people.cpf_normalized` and `fiscal_profiles.issuer_document` per local E2E attempt, preventing duplicate constraints on both the person and `(issuer_document,version)` fiscal profile when Playwright retries. No application runtime, DB migrations, clinical data, live NFS-e, external communications or deployment settings are changed.
+- Testes: RED: `CI #41323930098`, job `#124921452492`, finished FAILURE (01/11 18:38 UTC): `people_cpf_normalized_key` rejected repeated `12345678901` on two retry attempts; independent schema review identified the second retry collision at `unique (issuer_document, version)` with the same fixed issuer; a separate login timeout and one agenda-test flaky retry were observed and are **not** declared solved here. Initial Repository Governance Gate for PR #309 `#41344152950` correctly failed with `AUDIT_LEDGER_DELTA=FAIL` because this ledger delta was missing; it was not disabled.
+  GREEN direcionado: independent Node 22 execution generated 10,000 distinct, valid, wholly fictitious CPFs, checking both verification digits and rejecting collisions in that sample. This is a **helper/fixture** test, not a substitute for full CI, Playwright E2E, real UI or exact-SHA validation.
+- Evidencias: [PR #309](https://github.com/fredmourao-ai/solange-rolla-consultorio/pull/309); [failed baseline CI](https://github.com/fredmourao-ai/solange-rolla-consultorio/actions/runs/41323930098); [initial governance RED](https://github.com/fredmourao-ai/solange-rolla-consultorio/actions/runs/41344152950); issue #98. No patient, staging database, Supabase token, browser lease or runner was manually modified.
+- Pendencias: re-run/observe the exact PR SHA governance, CI and Database gates and fix regressions before an authorized protected merge. Supabase managed backup #191 remains HTTP 401 / restore unverified; staging and 15-day UI homologation are still **NAO_APTO**.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-01 - remover dependencia GitHub-hosted do handoff Solange (CI gratuito)
+
+- Base SHA: 73b7f6aba33996a1e124b94839f942086170fc9b
+- Impacto: corta a duplicacao dos testes completos do aplicativo no governance-gate em modo CI, mantendo bridge V5, contrato de continuidade, historico append-only e isolamento; remove o job staging-handoff hospedado e seu polling 160x15s do auto-merge; o workflow staging-promote ja observa conclusoes de CI/Database/Governance/Main Guard pelo gatilho workflow_run em runner Solange privado e verifica SHA exato e sucesso de todos os gates antes do deploy. Mantem runner exclusivo de staging, backup, aprovacao e checks; nao altera deploy, seguranca, dados ou faturamento.
+- Testes: Revisao independente detectou que o early-exit pulava o contrato Dependabot .mjs; regressao focal RED confirmou a omissao, contrato movido antes da saida CI e revalidado com Node 24.19.0. Regressao de arquitetura adicionada para impedir que gate de governanca repita app checks cobertos por CI requerido; contratos de workflows e runners atualizados para rejeitar ubuntu-latest em qualquer job Solange; suite local e governanca devem executar antes de PR/merge. Caso observacional existente workflow_run 41324154623 confirmou canonical-gate PASS, mas promote SKIPPED; isso NAO certifica deploy.
+- Evidencias: Reconciliacao 2026-11-01 contra main 73b7f6aba33996a1e124b94839f942086170fc9b preservou integralmente o delta #309 e este registro; conflito causado por append concorrente no mesmo final do ledger.  runner proprio ficou cerca de 15 minutos em governance-gate com npm ci/build duplicados durante janela de PR; otimizacao elimina essa concorrencia sem remover CI exigido; repo publico legado PR #34 demonstra falha upstream GitHub-hosted por bloqueio de billing; runner proprio solange-ci-a1 ativo no backend; o repositorio canonico ja recebe workflow_run em staging-promote sem GitHub-hosted. Codigo para CI do SHA revisado ainda requer validacao independente.
+- Pendencias: executar testes reais/CI no novo SHA e revisão de branch; integrar somente com gates e aprovacao vigente, verificar workflow_run apos merge e homologacao real/UI/backup sem custo; nao reivindicar APTO V5 por esta mudanca de orquestracao.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-01 — PR #308 - checklist obrigatorio para todos os agentes
+
+- Base SHA: 988333f75c03b73880a004ca316281e84487d954
+- Impacto: corrige project JSON e espelho do manifesto global V5 apos transferencias GitHub Solange (ID 1345489426) e MEI-MG (ID 1322334568), atualiza hashes reais de scripts e fixa identidade tecnica atual Vivaliz-site/solange-rolla-consultorio apos transferencia oficial e atualiza instrucoes de agentes GPT, Codex, Claude, Gemini e Copilot, gatilho do workflow de continuidade e seus testes de contrato; sem schema, paciente, preco, credencial ou deploy.
+- Testes: RED do gate oficial devido a project antigo; GREEN local de validate-audit-governance.py, 2 suites de continuidade e delta append-only. Manifesto global, hashes e lista verificados; checks GitHub e main canonico ja contem ambas as transferencias e hashes verificaveis.
+- Evidencias: GitHub 301 no nome antigo e repository ID 1345489426 preservado; backend tarefas 997aadd8 e 544d975f com testes GREEN; Repository Governance #41378949767 falhou corretamente por project antigo e foi corrigido sem bypass; fonte central na pipeline PR #72.
+- Pendencias: checks e merge da politica V5 global e espelhos, CI e Database no head final #308, staging SHA exato, backup gerenciado e restore, 15 dias de UI real e veredito V5 independente.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
 
 <!-- AUDIT_DELTA_V1 -->
 ## 2026-11-01 — PR #312 — Prevencao de revisao humana universal, com CODEOWNERS restrito
