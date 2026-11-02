@@ -3,6 +3,11 @@
 Acione o plugin Gepeto junto com Superpowers em toda tarefa e retomada, sem nova mencao do usuario. Leia e cumpra `GEPETO-POLICY.md`. Se o runtime nao expuser o plugin, registre `GEPETO_UNAVAILABLE`, informe a limitacao e continue o trabalho autorizado sem simular participacao. Aplicar um plugin nao comprova delegacao nem revisao independente.
 <!-- /GEPETO_EVERY_TASK_V1 -->
 
+<!-- MANDATORY_AGENT_CHECKLIST_V1 -->
+## Checklist de execucao obrigatorio (GPT, Codex, Claude, Gemini, Copilot e outros)
+Antes de cada tarefa e em cada nova conversa, carregar no `main` a documentacao canonica ShopVivaliz e as regras deste repositorio. Iniciar ou recuperar a tarefa original com `scripts/agent_task_state.py` conectado ao controlador canonico autorizado, sem criar duplicata nem inferir IDs de conversa. Registrar plano com `plan-checklist --task ID --step "..."`, consultar a proxima etapa via `next-step --task ID` ANTES de agir, executar e validar cada etapa, marcar com `check-step --task ID --step-id N --evidence PROVA --verification VALIDACAO`, e so entao passar para a proxima. Novas exigencias entram via `add-checklist-step`; nenhuma etapa e descartada. Os comandos de registro falham sem o controlador canonico provisionado; nao simular estado local, nem declarar sucesso por ACK, PR, CI verde ou processo ativo. `ready`/`complete` exigem a meta original comprovada, correcoes, regressao, E2E/UI quando aplicavel e merge/deploy validado. Se uma rota tecnica falhar, avaliar alternativas EXISTENTES e independentemente autorizadas (MCP, GitHub, RDC, SSH privado/Tailscale, tuneis, APIs, hosts e ferramentas disponiveis); documentar cada tentativa. `BLOCKED_EXTERNAL` so com impedimento objetivo apos esgotar rotas seguras; jamais burlar MFA, RBAC, 401/403, branch protection, leases ou aprovacoes. O controlador e contingencia, nao substitui a obrigacao de o agente executar e continuar ate concluir. Este contrato deve ser testado e aplicado no CI, nao apenas estar escrito.
+<!-- /MANDATORY_AGENT_CHECKLIST_V1 -->
+
 <!-- AUDIT_UI_EVIDENCE_INTEGRITY_V2 -->
 ## GATE EXECUTAVEL — UI, evidencia real e continuidade da Auditoria Extrema V5
 
