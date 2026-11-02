@@ -226,3 +226,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: validar no SHA exato Repository Governance Gate, Absolute Audit Governance, CI, Database e protecoes; integrar por auto-merge autorizado somente apos gates, reconciliar downstream #314 e executar backup gerenciado e restore isolado #191, quinze dias UI #98. Estado global permanece NAO_APTO.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-02 — normalizacao EOL token staging #314
+
+- Base SHA: 7fa5b5f15891e0944977251857a93ffb774a872f
+- Impacto: #191; `scripts/verify-managed-backup-evidence.py` aceita apenas CR/LF terminais ao carregar o PAT de staging; CR/LF internos, whitespace extra e token vazio permanecem invalidos. Nenhuma alteracao em ambiente clinico, projeto Supabase, acesso externo, banco, backup, restore, permissionamento ou flags de escrita.
+- Testes: RED oficial Repository Governance Gate na PR #314 HEAD 597e0d0a (job 125068177690, 2026-11-02T03:08:07Z): material paths changed (2) without AUDIT_STATUS.md. RED funcional contra script main: 35 testes, 3 erros esperados para LF/CRLF finais (evidencia #191). GREEN direcionado na branch anterior: 35/35 com PAT sintetico e negativas CR/LF internos; resultado do gate oficial neste novo SHA ainda nao esta comprovado.
+- Evidencias: workflow `Managed Staging Backup Evidence` run 41378442315 falhou com management_token_missing_or_invalid antes de acessar API Supabase; PR #314 documenta reparo sem ler segredos; houve falha real de governanca por delta ausente e este registro append-only corrige apenas a rastreabilidade. A identidade do token real continua nao verificada.
+- Pendencias: aguardar checks oficiais do SHA atualizado, auto-merge protegido; apos integracao repetir uma unica vez o workflow canonico sem concorrencia no runner; exigir metadata do backup do staging gerenciado, restore isolado com RLS/schema/Storage e teste de UI no SHA exato. Nao declarar API 200, recuperacao certificada ou quinze dias homologados.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
