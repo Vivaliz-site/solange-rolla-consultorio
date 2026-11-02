@@ -259,3 +259,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: certificar Repository Governance Gate, Absolute Audit Governance, CI, Database e merge/main via GitHub no SHA exato do PR desta otimizacao; confirmar que escopo isolado pula apenas suites clinicas/DB em PR subsequente de governanca; medir reducao da fila sem alterar required checks nem interferir no runner single-writer ou em #312.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-02 — Correcao do handoff de CI pos-merge para staging gerenciado
+
+- Base SHA: ad9f2baec25bd06aba0eb7f3dd720fa48ccae3f3
+- Impacto: o fluxo PR Auto Merge despachava quatro validadores main usando GITHUB_TOKEN, mas nao houve Staging Promote para o mesmo SHA. O CI main agora oferece um job final condicionado ao workflow_dispatch do proprio github-actions[bot], com dependencias de TODOS os jobs CI verdes e permissao actions:write EXCLUSIVAMENTE nesse job (mudanca P2 a exigir revisao humana formal). O dispatcher revalida main exato, origem da CI, tres outros validadores oficiais, unicidade e despacho do workflow EXISTENTE; ele nao promove banco nem ignora backup, RBAC, environment staging, lease ou gate de restore.
+- Testes: RED observado no GitHub: CI #41459412505, Database #41459417850, Repository Governance #41459422150 e Absolute Audit Main Guard #41459426207 SUCCESS no main ad9f2bae, sem Staging Promote correspondente. GREEN local sintetico direcionado: 11/11 unittest do algoritmo, incluindo fail-closed SHA divergente, status pending/failed, paginacao, origem CI, identidade nao bot, idempotencia e dispatch do workflow existente; py_compile PASS. Testes oficiais no SHA final desta PR e teste de dispatch real AINDA PENDENTES.
+- Evidencias: issue #191, workflow .github/workflows/ci.yml, script scripts/dispatch-staging-after-ci.py e regressao tests/test_staging_handoff.py; sem execucao do workflow staging, mutacao clinica, secrets, runner novo, bypass ou compra/pagamento real.
+- Pendencias: exigir APPROVED exclusivo shopvivaliz-human no HEAD da PR P2 e checks/merge protegido; testar handoff pos-merge em main exato. Corrigir pelo canal oficial o secret staging/SUPABASE_ACCESS_TOKEN ausente/invalido antes de promover; o Staging Promote permanece fail-closed no managed backup e nao valida restore/Storage. #191 e #98 continuam NAO_APTO ate restore isolado e quinze dias de UI real em SHA publicado.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
