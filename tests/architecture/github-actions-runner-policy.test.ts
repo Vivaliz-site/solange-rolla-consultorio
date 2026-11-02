@@ -195,7 +195,15 @@ function normalizeCondition(condition: string): string {
 
 function conditionRequiresSameRepoOnEvent(condition: string, eventName: PullRequestEvent): boolean {
   const branches = splitTopLevel(stripOuterParens(normalizeCondition(condition)), '||')
-  if (branches.length === 1) return branchRequiresPositiveSameRepoGuard(branches[0] ?? '')
+  if (branches.length === 1) {
+    // Exact workflow_dispatch guards are mutually exclusive with fork-controlled PR events.
+    // Never exempt an OR branch; the event equality must be a top-level AND conjunct.
+    const conjuncts = splitTopLevel(branches[0] ?? '', '&&')
+    if (conjuncts.some((conjunct) => stripOuterParens(conjunct) === "github.event_name == 'workflow_dispatch'")) {
+      return true
+    }
+    return branchRequiresPositiveSameRepoGuard(branches[0] ?? '')
+  }
   if (branches.length !== 2) return false
   if (stripOuterParens(branches[0] ?? '') !== `github.event_name != '${eventName}'`) return false
   return branchRequiresPositiveSameRepoGuard(branches[1] ?? '')
@@ -347,6 +355,20 @@ describe('GitHub Actions runner policy', () => {
     const workflow = ['concurrency:', '  group: &pr-event pull_request', 'on: [*pr-event]'].join('\n')
 
     expect(hasPullRequestTrigger(workflow)).toBe(true)
+  })
+
+  it('allows exact dispatch-only postmerge jobs while rejecting PR-event OR bypasses', () => {
+    const onlyDispatch = [
+      "github.event_name == 'workflow_dispatch'",
+      "github.ref == 'refs/heads/main'",
+      "github.actor == 'github-actions[bot]'",
+    ].join(' && ')
+    for (const eventName of ['pull_request', 'pull_request_target'] as const) {
+      expect(conditionRequiresSameRepoOnEvent(onlyDispatch, eventName)).toBe(true)
+      expect(conditionRequiresSameRepoOnEvent(`(${onlyDispatch}) || true`, eventName)).toBe(false)
+      expect(conditionRequiresSameRepoOnEvent("github.event_name == 'workflow_dispatch' == false", eventName)).toBe(false)
+      expect(conditionRequiresSameRepoOnEvent(`github.event_name != '${eventName}'`, eventName)).toBe(false)
+    }
   })
 
   it('requires the matching event exemption for pull_request_target', () => {
