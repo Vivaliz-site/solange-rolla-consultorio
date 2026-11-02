@@ -162,6 +162,29 @@ class ManagedEvidenceTests(unittest.TestCase):
         self.assertEqual(str(error.exception),
                          "provider_query_failed_HTTP_unknown")
 
+    def test_copy_pasted_terminal_line_endings_are_normalized_for_request_header(self):
+        # This checks the official Management API request shape without
+        # network, secrets or access to any real Supabase project.
+        class FakeResponse:
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+            def read(self, size=-1): return b'{"pitr_enabled":false,"backups":[]}'
+
+        for pasted in (TOKEN + "\\n", TOKEN + "\\r\\n", TOKEN + "\\n\\r\\n"):
+            with self.subTest(length=len(pasted)):
+                captured = []
+                def opener(req, timeout=0):
+                    captured.append(req.get_header("Authorization"))
+                    return FakeResponse()
+                checker.fetch_backups(REF, pasted, opener=opener)
+                self.assertEqual(captured, ["Bearer " + TOKEN])
+
+    def test_internal_newline_and_whitespace_still_fail_closed(self):
+        for malformed in ("prefix\\n" + TOKEN, TOKEN + "\\nINJECT",
+                          TOKEN + "\\rX", " " + TOKEN, TOKEN + " "):
+            with self.subTest(which=malformed[:3]), self.assertRaises(checker.AuditFailure):
+                checker.fetch_backups(REF, malformed, opener=lambda *args, **kwargs: None)
+
     def test_api_missing_auth_fails_closed(self):
         with self.assertRaises(checker.AuditFailure):
             checker.fetch_backups(REF,"")
