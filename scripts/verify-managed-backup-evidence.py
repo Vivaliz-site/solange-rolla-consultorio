@@ -49,11 +49,16 @@ def validate_environment(staging_ref: str, production_ref: str, public_url: str)
 def fetch_backups(staging_ref: str, access_token: str, *, opener=urlopen) -> dict:
     if not REF_RE.fullmatch(staging_ref or ""):
         raise AuditFailure("staging_ref_invalid")
-    if not access_token or any(c in access_token for c in "\r\n"):
+    # Operators sometimes paste a PAT from a line-terminated secret file.
+    # Normalize ONLY trailing CR/LF before constructing the HTTP header.
+    # Embedded control characters or surrounding spaces remain invalid.
+    header_token = access_token.rstrip("\r\n")
+    if (not header_token or header_token != header_token.strip()
+            or any(c in header_token for c in "\r\n")):
         raise AuditFailure("management_token_missing_or_invalid")
     request = Request(
         "https://api.supabase.com/v1/projects/" + staging_ref + "/database/backups",
-        headers={"Authorization": "Bearer " + access_token,
+        headers={"Authorization": "Bearer " + header_token,
                  "Accept": "application/json",
                  "User-Agent": "SolangeAuditV5BackupEvidence/1"},
     )
