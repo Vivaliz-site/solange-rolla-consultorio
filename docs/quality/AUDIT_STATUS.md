@@ -219,7 +219,7 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 <!-- AUDIT_DELTA_V1 -->
 ## 2026-11-02 — normalizacao EOL token staging #314
 
-- Base SHA: 988333f75c03b73880a004ca316281e84487d954
+- Base SHA: 4a200d1c1220d869ac4b5f69ec981c98de8bc536
 - Impacto: #191; `scripts/verify-managed-backup-evidence.py` aceita apenas CR/LF terminais ao carregar o PAT de staging; CR/LF internos, whitespace extra e token vazio permanecem invalidos. Nenhuma alteracao em ambiente clinico, projeto Supabase, acesso externo, banco, backup, restore, permissionamento ou flags de escrita.
 - Testes: RED oficial Repository Governance Gate na PR #314 HEAD 597e0d0a (job 125068177690, 2026-11-02T03:08:07Z): material paths changed (2) without AUDIT_STATUS.md. RED funcional contra script main: 35 testes, 3 erros esperados para LF/CRLF finais (evidencia #191). GREEN direcionado na branch anterior: 35/35 com PAT sintetico e negativas CR/LF internos; resultado do gate oficial neste novo SHA ainda nao esta comprovado.
 - Evidencias: workflow `Managed Staging Backup Evidence` run 41378442315 falhou com management_token_missing_or_invalid antes de acessar API Supabase; PR #314 documenta reparo sem ler segredos; houve falha real de governanca por delta ausente e este registro append-only corrige apenas a rastreabilidade. A identidade do token real continua nao verificada.
