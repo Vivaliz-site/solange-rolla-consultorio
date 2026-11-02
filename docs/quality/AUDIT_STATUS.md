@@ -209,8 +209,8 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 ## 2026-11-01 — PR #308 - checklist obrigatorio para todos os agentes
 
 - Base SHA: 988333f75c03b73880a004ca316281e84487d954
-- Impacto: corrige project JSON e espelho do manifesto global V5 apos transferencia com GitHub repo ID 1345489426, atualiza hashes reais de scripts e fixa identidade tecnica atual Vivaliz-site/solange-rolla-consultorio apos transferencia oficial e atualiza instrucoes de agentes GPT, Codex, Claude, Gemini e Copilot, gatilho do workflow de continuidade e seus testes de contrato; sem schema, paciente, preco, credencial ou deploy.
-- Testes: RED do gate oficial devido a project antigo; GREEN local de validate-audit-governance.py, 2 suites de continuidade e delta append-only. Manifesto global, hashes e lista verificados; checks GitHub e politica central PR #72 ainda pendentes.
+- Impacto: corrige project JSON e espelho do manifesto global V5 apos transferencias GitHub Solange (ID 1345489426) e MEI-MG (ID 1322334568), atualiza hashes reais de scripts e fixa identidade tecnica atual Vivaliz-site/solange-rolla-consultorio apos transferencia oficial e atualiza instrucoes de agentes GPT, Codex, Claude, Gemini e Copilot, gatilho do workflow de continuidade e seus testes de contrato; sem schema, paciente, preco, credencial ou deploy.
+- Testes: RED do gate oficial devido a project antigo; GREEN local de validate-audit-governance.py, 2 suites de continuidade e delta append-only. Manifesto global, hashes e lista verificados; checks GitHub e main canonico ja contem ambas as transferencias e hashes verificaveis.
 - Evidencias: GitHub 301 no nome antigo e repository ID 1345489426 preservado; backend tarefas 997aadd8 e 544d975f com testes GREEN; Repository Governance #41378949767 falhou corretamente por project antigo e foi corrigido sem bypass; fonte central na pipeline PR #72.
 - Pendencias: checks e merge da politica V5 global e espelhos, CI e Database no head final #308, staging SHA exato, backup gerenciado e restore, 15 dias de UI real e veredito V5 independente.
 - Estado: NAO_APTO
