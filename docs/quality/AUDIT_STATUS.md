@@ -197,7 +197,7 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 <!-- AUDIT_DELTA_V1 -->
 ## 2026-11-01 — PR #308 - checklist obrigatorio para todos os agentes
 
-- Base SHA: b43c429b3b1bd2e7bfd511dbf19a3d8329053e98
+- Base SHA: 73b7f6aba33996a1e124b94839f942086170fc9b
 - Impacto: atualiza instrucoes de agentes GPT, Codex, Claude, Gemini e Copilot, gatilho do workflow de continuidade e seus testes de contrato; sem schema, paciente, preco, credencial ou deploy.
 - Testes: testes locais de contrato e sintaxe descritos na PR; gate oficial de governanca no HEAD 9507249 falhou pelo formato do ledger, portanto testes e checks completos ainda devem reexecutar no SHA corrigido; nao alegar CI verde antes do resultado remoto.
 - Evidencias: GitHub Actions Repository Governance Gate run 41309549735 job 124856863916, log oficial AUDIT_LEDGER_DELTA=FAIL com seis campos obrigatorios; PR #308 e diff de sete arquivos; nenhuma evidencia clinica ficticia.
