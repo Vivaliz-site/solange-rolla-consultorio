@@ -170,7 +170,7 @@ class ManagedEvidenceTests(unittest.TestCase):
             def __exit__(self, *args): return False
             def read(self, size=-1): return b'{"pitr_enabled":false,"backups":[]}'
 
-        for pasted in (TOKEN + "\\n", TOKEN + "\\r\\n", TOKEN + "\\n\\r\\n"):
+        for pasted in (TOKEN + "\n", TOKEN + "\r\n", TOKEN + "\n\r\n"):
             with self.subTest(length=len(pasted)):
                 captured = []
                 def opener(req, timeout=0):
@@ -180,8 +180,8 @@ class ManagedEvidenceTests(unittest.TestCase):
                 self.assertEqual(captured, ["Bearer " + TOKEN])
 
     def test_internal_newline_and_whitespace_still_fail_closed(self):
-        for malformed in ("prefix\\n" + TOKEN, TOKEN + "\\nINJECT",
-                          TOKEN + "\\rX", " " + TOKEN, TOKEN + " "):
+        for malformed in ("prefix\n" + TOKEN, TOKEN + "\nINJECT",
+                          TOKEN + "\rX", " " + TOKEN, TOKEN + " "):
             with self.subTest(which=malformed[:3]), self.assertRaises(checker.AuditFailure):
                 checker.fetch_backups(REF, malformed, opener=lambda *args, **kwargs: None)
 
