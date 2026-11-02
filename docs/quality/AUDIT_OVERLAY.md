@@ -7,9 +7,9 @@ Antes de iniciar uma auditoria extrema, o agente deve reconstruir as regras espe
 
 ## Repositório canônico e proveniência histórica
 
-`fredmourao-ai/solange-rolla-consultorio` é o único repositório canônico do projeto **Solange Rolla**.
+`Vivaliz-site/solange-rolla-consultorio` é o único repositório canônico do projeto **Solange Rolla**.
 
-O repositório `fredmourao-ai/solange-rolla` contém o MVP local histórico e serve apenas como proveniência. Evidências, screenshots, testes, auditorias, validações visuais ou comportamento do MVP legado **não podem ser usados como evidência de funcionamento, segurança, homologação, restore ou prontidão de produção do sistema atual**.
+O repositório `Vivaliz-site/solange-rolla` contém o MVP local histórico e serve apenas como proveniência. Evidências, screenshots, testes, auditorias, validações visuais ou comportamento do MVP legado **não podem ser usados como evidência de funcionamento, segurança, homologação, restore ou prontidão de produção do sistema atual**.
 
 A reconciliação entre o MVP e o sistema atual está em `docs/legacy/solange-rolla-mvp-lineage.md`.
 

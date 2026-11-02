@@ -215,3 +215,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: checks e merge da politica V5 global e espelhos, CI e Database no head final #308, staging SHA exato, backup gerenciado e restore, 15 dias de UI real e veredito V5 independente.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-02 — identidade do repositorio Solange apos transferencia (#313)
+
+- Base SHA: 4a200d1c1220d869ac4b5f69ec981c98de8bc536
+- Impacto: corrigir identidade canonica de Solange em adaptador de continuidade, instrucoes e requirements de auditoria apos transferencia para Vivaliz-site; sincronizar GLOBAL_AUDIT_MANIFEST.json byte a byte com o manifesto normativo em Vivaliz-site/-shopvivaliz-pipeline@main, preservando hashes globais, isolamento e regras de CI. Nao toca dados clinicos, tokens, secrets, producao ou permissoes.
+- Testes: RED oficial Repository Governance Gate #41379443243 job 125066788529 por ausencia de delta; RED Absolute Audit Governance #41379443326 por local_manifest_parity=false. Testes locais da implementacao original: 5/5 unittest do adapter, self-test e git diff --check PASS conforme PR #313. Revalidacao oficial do novo SHA necessaria, nao inventar GREEN.
+- Evidencias: PR #313 HEAD inicial 9d04dab0; sincronizacao CAS do manifesto no commit 498f999f, blob canonico 5f405fc25229f584bb6c880cfe82c0e0db386dda, update-branch protegido pelo endpoint oficial gerou merge de main bbe51e9c antes deste registro; houve leitura do bloco de ledger anterior e preservacao integral via append.
+- Pendencias: validar no SHA exato Repository Governance Gate, Absolute Audit Governance, CI, Database e protecoes; integrar por auto-merge autorizado somente apos gates, reconciliar downstream #314 e executar backup gerenciado e restore isolado #191, quinze dias UI #98. Estado global permanece NAO_APTO.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
