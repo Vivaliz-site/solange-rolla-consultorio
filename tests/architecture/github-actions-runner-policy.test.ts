@@ -214,10 +214,10 @@ describe('GitHub Actions runner policy', () => {
     expect(packageJson.devDependencies?.['js-yaml']).toBeDefined()
   })
 
-  it('routes workflow jobs through Solange runners except the non-blocking control-plane handoff', () => {
+  it('routes all workflow jobs through approved self-hosted Solange runners', () => {
     for (const workflow of workflows()) {
       const runsOnLines = workflow.content.match(/^\s*runs-on:.*$/gmu) ?? []
-      const allowed = [runnerLine, runnerLineExceptions[workflow.name], ...(workflow.name === 'pr-auto-merge.yml' ? ['runs-on: ubuntu-latest'] : [])].filter(Boolean)
+      const allowed = [runnerLine, runnerLineExceptions[workflow.name]].filter(Boolean)
       for (const line of runsOnLines) {
         expect(allowed, `${workflow.name}: ${line.trim()}`).toContain(line.trim())
       }

@@ -193,3 +193,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: re-run/observe the exact PR SHA governance, CI and Database gates and fix regressions before an authorized protected merge. Supabase managed backup #191 remains HTTP 401 / restore unverified; staging and 15-day UI homologation are still **NAO_APTO**.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-01 - remover dependencia GitHub-hosted do handoff Solange (CI gratuito)
+
+- Base SHA: 73b7f6aba33996a1e124b94839f942086170fc9b
+- Impacto: corta a duplicacao dos testes completos do aplicativo no governance-gate em modo CI, mantendo bridge V5, contrato de continuidade, historico append-only e isolamento; remove o job staging-handoff hospedado e seu polling 160x15s do auto-merge; o workflow staging-promote ja observa conclusoes de CI/Database/Governance/Main Guard pelo gatilho workflow_run em runner Solange privado e verifica SHA exato e sucesso de todos os gates antes do deploy. Mantem runner exclusivo de staging, backup, aprovacao e checks; nao altera deploy, seguranca, dados ou faturamento.
+- Testes: Revisao independente detectou que o early-exit pulava o contrato Dependabot .mjs; regressao focal RED confirmou a omissao, contrato movido antes da saida CI e revalidado com Node 24.19.0. Regressao de arquitetura adicionada para impedir que gate de governanca repita app checks cobertos por CI requerido; contratos de workflows e runners atualizados para rejeitar ubuntu-latest em qualquer job Solange; suite local e governanca devem executar antes de PR/merge. Caso observacional existente workflow_run 41324154623 confirmou canonical-gate PASS, mas promote SKIPPED; isso NAO certifica deploy.
+- Evidencias: Reconciliacao 2026-11-01 contra main 73b7f6aba33996a1e124b94839f942086170fc9b preservou integralmente o delta #309 e este registro; conflito causado por append concorrente no mesmo final do ledger.  runner proprio ficou cerca de 15 minutos em governance-gate com npm ci/build duplicados durante janela de PR; otimizacao elimina essa concorrencia sem remover CI exigido; repo publico legado PR #34 demonstra falha upstream GitHub-hosted por bloqueio de billing; runner proprio solange-ci-a1 ativo no backend; o repositorio canonico ja recebe workflow_run em staging-promote sem GitHub-hosted. Codigo para CI do SHA revisado ainda requer validacao independente.
+- Pendencias: executar testes reais/CI no novo SHA e revisão de branch; integrar somente com gates e aprovacao vigente, verificar workflow_run apos merge e homologacao real/UI/backup sem custo; nao reivindicar APTO V5 por esta mudanca de orquestracao.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
