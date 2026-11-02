@@ -181,3 +181,15 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: Todos os required checks de GitHub Actions no SHA final, incluindo Repository Governance Gate, Absolute Audit Governance, Global Task Continuity e CI/Database quando aplicaveis; resolver fila e cancelamentos oficialmente, realizar merge protegido e validar main/staging conforme impacto. Auditoria global V5 segue NAO_APTO, sem evidencias de certificacao clinica/UI pos-deploy no mesmo release.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-01 — Fiscal mock E2E unique synthetic CPF (#98/PR #309)
+
+- Base SHA: b43c429b3b1bd2e7bfd511dbf19a3d8329053e98
+- Impacto: `tests/e2e/fiscal-mock-operations.spec.ts` uses the same generated, valid **synthetic CPF** in `people.cpf_normalized` and `fiscal_profiles.issuer_document` per local E2E attempt, preventing duplicate constraints on both the person and `(issuer_document,version)` fiscal profile when Playwright retries. No application runtime, DB migrations, clinical data, live NFS-e, external communications or deployment settings are changed.
+- Testes: RED: `CI #41323930098`, job `#124921452492`, finished FAILURE (01/11 18:38 UTC): `people_cpf_normalized_key` rejected repeated `12345678901` on two retry attempts; independent schema review identified the second retry collision at `unique (issuer_document, version)` with the same fixed issuer; a separate login timeout and one agenda-test flaky retry were observed and are **not** declared solved here. Initial Repository Governance Gate for PR #309 `#41344152950` correctly failed with `AUDIT_LEDGER_DELTA=FAIL` because this ledger delta was missing; it was not disabled.
+  GREEN direcionado: independent Node 22 execution generated 10,000 distinct, valid, wholly fictitious CPFs, checking both verification digits and rejecting collisions in that sample. This is a **helper/fixture** test, not a substitute for full CI, Playwright E2E, real UI or exact-SHA validation.
+- Evidencias: [PR #309](https://github.com/fredmourao-ai/solange-rolla-consultorio/pull/309); [failed baseline CI](https://github.com/fredmourao-ai/solange-rolla-consultorio/actions/runs/41323930098); [initial governance RED](https://github.com/fredmourao-ai/solange-rolla-consultorio/actions/runs/41344152950); issue #98. No patient, staging database, Supabase token, browser lease or runner was manually modified.
+- Pendencias: re-run/observe the exact PR SHA governance, CI and Database gates and fix regressions before an authorized protected merge. Supabase managed backup #191 remains HTTP 401 / restore unverified; staging and 15-day UI homologation are still **NAO_APTO**.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
