@@ -4,7 +4,7 @@ Policy: `GLOBAL_TASK_CONTINUITY_V8`.
 
 Este repositório consome o controlador canônico detached em
 `Vivaliz-site/site-shopvivaliz`. O adapter local fixa
-`repository=fredmourao-ai/solange-rolla-consultorio` e falha fechado se o
+`repository=Vivaliz-site/solange-rolla-consultorio` e falha fechado se o
 controlador não for injetado. Certificação exige `continuity_e2e_pass` real
 para a mesma identidade de repositório.
 
