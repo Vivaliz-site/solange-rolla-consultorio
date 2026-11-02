@@ -99,37 +99,35 @@ describe('environment workflow contracts', () => {
     expect(workflow).toContain("new URLSearchParams({ head_sha: sha, event, per_page: '100' })")
   })
 
-  it('always hands green post-merge validation off to staging promotion', () => {
+  it('dispatches exact-SHA post-merge checks without a billed hosted-runner handoff', () => {
     const autoMerge = readFileSync(autoMergeWorkflow, 'utf8')
-    expect(autoMerge).not.toContain("vars.STAGING_AUTO_PROMOTE_ENABLED == 'true'")
-    expect(autoMerge).toContain('actions/workflows/staging-promote.yml/dispatches')
-    expect(autoMerge).toContain('-f "inputs[commit_sha]=$sha"')
-    expect(autoMerge).not.toContain('-f commit_sha="$sha"')
+    expect(autoMerge).toContain('Re-validate merged main at its exact SHA')
+    expect(autoMerge).toContain('for workflow in ci.yml db.yml repository-governance.yml')
+    expect(autoMerge).toContain('absolute-audit-main-guard.yml')
+    expect(autoMerge).not.toContain('staging-handoff:')
+    expect(autoMerge).not.toContain('STAGING_HANDOFF_MAX_ATTEMPTS')
+    expect(autoMerge).not.toContain('ubuntu-latest')
   })
 
-  it('waits for exact-SHA canonical validation before dispatching staging promotion', () => {
-    const autoMerge = readFileSync(autoMergeWorkflow, 'utf8')
-    expect(autoMerge).toContain('STAGING_HANDOFF_MAX_ATTEMPTS')
-    expect(autoMerge).toContain('canonical post-merge checks still pending')
-    expect(autoMerge).toContain('sleep 15')
-    expect(autoMerge.indexOf('canonical post-merge checks are green')).toBeLessThan(
-      autoMerge.indexOf('actions/workflows/staging-promote.yml/dispatches'),
-    )
+  it('uses the self-hosted workflow_run promotion gate after each canonical main check', () => {
+    const promotion = readFileSync(stagingWorkflow, 'utf8')
+    expect(promotion).toContain('workflows: [CI, Database, Repository Governance Gate, Absolute Audit Main Guard]')
+    expect(promotion).toContain('types: [completed]')
+    expect(promotion).toContain("github.event.workflow_run.conclusion == 'success'")
+    expect(promotion).toContain("acceptedEvents = ['push', 'workflow_dispatch']")
+    expect(promotion).toContain('canonical checks not green')
+    expect(promotion).toContain('promotion not ready:')
+    expect(promotion).toContain("if: needs.canonical-gate.outputs.ready == 'true'")
+    expect(promotion).toContain('runs-on: [self-hosted, Linux, ARM64, solange-ci]')
+    expect(promotion).toContain('cancel-in-progress: false')
   })
 
-  it('does not occupy the self-hosted runner while waiting for post-merge canonical checks', () => {
+  it('cannot occupy the only runner while polling for other canonical checks', () => {
     const autoMerge = readFileSync(autoMergeWorkflow, 'utf8')
-    const [mergeJob, stagingHandoff] = autoMerge.split('\n  staging-handoff:')
-
-    expect(stagingHandoff).toBeDefined()
-    expect(mergeJob).not.toContain('canonical post-merge checks still pending')
-    expect(stagingHandoff).toContain('runs-on: ubuntu-latest')
-    expect(stagingHandoff).toContain('canonical post-merge checks still pending')
-  })
-
-  it('retries staging handoff after a cancelled or failed prior promotion', () => {
-    const autoMerge = readFileSync(autoMergeWorkflow, 'utf8')
-    expect(autoMerge).toContain('select(.status != "completed" or .conclusion == "success")')
+    const promotion = readFileSync(stagingWorkflow, 'utf8')
+    expect(autoMerge).not.toContain('sleep 15')
+    expect(autoMerge).not.toContain('staging-handoff:')
+    expect(promotion).toContain("github.event_name == 'workflow_run'")
   })
 
   it('allocates a runner-local E2E port instead of assuming port 3000 is free', () => {
