@@ -32,6 +32,18 @@ MANAGED_BACKUP_METADATA = {
     "tests/test_managed_backup_evidence.py",
 }
 
+# These files govern PR reviewer routing, not the clinical application, schema,
+# or database runtime. The independent required Repository Governance Gate
+# executes and tests the modified reviewer/ledger checks on the exact HEAD.
+# Unknown workflows, grants, agent policy, CI selector and all other scripts
+# must continue to request FULL CI (fail closed).
+REVIEW_ROUTING_GOVERNANCE = {
+    ".github/CODEOWNERS",
+    "scripts/check_pr_review_routing.py",
+    "scripts/repository-governance-validate.sh",
+    "tests/test_pr_review_routing.py",
+}
+
 
 def classify(paths: list[str] | None, *, force_full: bool = False) -> dict[str, object]:
     files = sorted(set(p.strip().replace("\\", "/").removeprefix("./")
@@ -47,6 +59,8 @@ def classify(paths: list[str] | None, *, force_full: bool = False) -> dict[str, 
             groups.add("audit_ledger")
         elif file in MANAGED_BACKUP_METADATA:
             groups.add("managed_backup_metadata")
+        elif file in REVIEW_ROUTING_GOVERNANCE:
+            groups.add("pr_review_governance")
         elif file in SECURITY_DOCS or file.startswith(SECURITY_PREFIXES):
             unsafe.append(file)
         elif file in ISOLATED_HEALTH:

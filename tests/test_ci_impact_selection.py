@@ -97,5 +97,58 @@ class ScopedSolangeCI(unittest.TestCase):
         self.assertEqual(selector.classify(["README.md", "README.md"])["changed_files"], ["README.md"])
 
 
+    def test_review_governance_isolated_from_clinical_and_database_suites(self):
+        changed = [
+            ".github/CODEOWNERS",
+            "scripts/check_pr_review_routing.py",
+            "scripts/repository-governance-validate.sh",
+            "tests/test_pr_review_routing.py",
+            "docs/quality/AUDIT_STATUS.md",
+        ]
+        result = selector.classify(changed)
+        self.assertEqual(result["mode"], "scoped")
+        self.assertEqual(result["groups"], ["audit_ledger", "pr_review_governance"])
+        self.assertEqual(result["full_reasons"], [])
+        for gate in ("run_core", "run_e2e", "run_db"):
+            self.assertFalse(result[gate], gate)
+
+    def test_review_governance_mixed_with_clinical_or_security_contract_is_full(self):
+        for other in (
+            "src/modules/clinical/services/update.ts",
+            "src/platform/supabase/client.ts",
+            "supabase/migrations/20261102.sql",
+            "AGENTS.md",
+            ".github/workflows/ci.yml",
+            ".github/workflows/absolute-audit-governance.yml",
+            "scripts/validate-owner-pr-grant.py",
+            "scripts/ci-impact-selection.py",
+            "tests/test_ci_impact_selection.py",
+            "scripts/backup-homologation.sh",
+        ):
+            with self.subTest(other=other):
+                result = selector.classify([
+                    ".github/CODEOWNERS", "docs/quality/AUDIT_STATUS.md", other
+                ])
+                self.assertEqual(result["mode"], "full")
+                self.assertTrue(result["run_core"])
+                self.assertTrue(result["run_e2e"])
+                self.assertTrue(result["run_db"])
+
+    def test_arbitrary_governance_prefix_is_not_a_wildcard_exemption(self):
+        for path in (".github/FUNDING.yml", "scripts/check_other_guard.py", "tests/test_other_guard.py"):
+            with self.subTest(path=path):
+                self.assertEqual(selector.classify([path])["mode"], "full")
+
+    def test_architecture_is_required_but_not_repeated_inside_build(self):
+        # Branch protection requires both architecture and build status contexts.
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        architecture = workflow.split("\n  architecture:\n", 1)[1].split("\n  build:\n", 1)[0]
+        build = workflow.split("\n  build:\n", 1)[1].split("\n  e2e:\n", 1)[0]
+        self.assertIn("npm run arch:check", architecture)
+        self.assertIn("npm run modules:check", architecture)
+        self.assertNotIn("npm run arch:check", build)
+        self.assertNotIn("npm run modules:check", build)
+
+
 if __name__ == "__main__":
     unittest.main()

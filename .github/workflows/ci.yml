@@ -195,10 +195,6 @@ jobs:
         run: npm ci
       - name: Verify lockfile is reproducible
         run: git diff --exit-code -- package-lock.json
-      - name: Architecture dependency contracts
-        run: npm run arch:check
-      - name: Module contracts
-        run: npm run modules:check
       - name: Build
         run: npm run build
       - name: Runtime dependency audit
