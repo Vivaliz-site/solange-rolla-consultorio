@@ -46,6 +46,9 @@ else
   git diff --cached --check
 fi
 
+# Keep this fast repository policy check in CI; Vitest does not run .mjs tests.
+node --test tests/dependabot-no-pr-contract.test.mjs
+
 # The independent required CI workflow runs the application's impact-selected
 # lint/typecheck/unit/build/E2E/DB suites. Repeating the entire suite here held
 # the shared self-hosted runner for 15 minutes. Always enforce the V5 audit
@@ -67,7 +70,6 @@ else
   npm run migrations:check
 fi
 npm run test:run -- --fileParallelism=false
-node --test tests/dependabot-no-pr-contract.test.mjs
 
 if [ -f tests/test_ai_conflict_resolver.py ]; then
   if command -v python3 >/dev/null 2>&1; then

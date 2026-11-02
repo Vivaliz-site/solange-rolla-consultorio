@@ -211,6 +211,9 @@ describe('repository governance contract', () => {
     expect(script).toContain('check_project_boundaries')
     expect(script).toContain('AUDIT_LEDGER_BASE_SHA')
     expect(script).toContain('REPOSITORY_GOVERNANCE_APP_CHECKS=DELEGATED_TO_CI_IMPACT_SCOPE')
+    const policyCheck = script.indexOf('node --test tests/dependabot-no-pr-contract.test.mjs')
+    expect(policyCheck).toBeGreaterThan(-1)
+    expect(policyCheck).toBeLessThan(script.indexOf('REPOSITORY_GOVERNANCE_APP_CHECKS=DELEGATED_TO_CI_IMPACT_SCOPE'))
     expect(script).toMatch(/if \[\[ "\$mode" == "ci" \]\]; then\s+echo .+\s+exit 0/u)
     expect(script.indexOf('REPOSITORY_GOVERNANCE_APP_CHECKS=DELEGATED_TO_CI_IMPACT_SCOPE')).toBeLessThan(
       script.indexOf('npm run lint'),
