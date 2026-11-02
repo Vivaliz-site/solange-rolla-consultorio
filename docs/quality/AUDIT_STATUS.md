@@ -217,6 +217,28 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 <!-- /AUDIT_DELTA_V1 -->
 
 <!-- AUDIT_DELTA_V1 -->
+## 2026-11-02 — identidade do repositorio Solange apos transferencia (#313)
+
+- Base SHA: 4a200d1c1220d869ac4b5f69ec981c98de8bc536
+- Impacto: corrigir identidade canonica de Solange em adaptador de continuidade, instrucoes e requirements de auditoria apos transferencia para Vivaliz-site; sincronizar GLOBAL_AUDIT_MANIFEST.json byte a byte com o manifesto normativo em Vivaliz-site/-shopvivaliz-pipeline@main, preservando hashes globais, isolamento e regras de CI. Nao toca dados clinicos, tokens, secrets, producao ou permissoes.
+- Testes: RED oficial Repository Governance Gate #41379443243 job 125066788529 por ausencia de delta; RED Absolute Audit Governance #41379443326 por local_manifest_parity=false. Testes locais da implementacao original: 5/5 unittest do adapter, self-test e git diff --check PASS conforme PR #313. Revalidacao oficial do novo SHA necessaria, nao inventar GREEN.
+- Evidencias: PR #313 HEAD inicial 9d04dab0; sincronizacao CAS do manifesto no commit 498f999f, blob canonico 5f405fc25229f584bb6c880cfe82c0e0db386dda, update-branch protegido pelo endpoint oficial gerou merge de main bbe51e9c antes deste registro; houve leitura do bloco de ledger anterior e preservacao integral via append.
+- Pendencias: validar no SHA exato Repository Governance Gate, Absolute Audit Governance, CI, Database e protecoes; integrar por auto-merge autorizado somente apos gates, reconciliar downstream #314 e executar backup gerenciado e restore isolado #191, quinze dias UI #98. Estado global permanece NAO_APTO.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-02 — normalizacao EOL token staging #314
+
+- Base SHA: 7fa5b5f15891e0944977251857a93ffb774a872f
+- Impacto: #191; `scripts/verify-managed-backup-evidence.py` aceita apenas CR/LF terminais ao carregar o PAT de staging; CR/LF internos, whitespace extra e token vazio permanecem invalidos. Nenhuma alteracao em ambiente clinico, projeto Supabase, acesso externo, banco, backup, restore, permissionamento ou flags de escrita.
+- Testes: RED oficial Repository Governance Gate na PR #314 HEAD 597e0d0a (job 125068177690, 2026-11-02T03:08:07Z): material paths changed (2) without AUDIT_STATUS.md. RED funcional contra script main: 35 testes, 3 erros esperados para LF/CRLF finais (evidencia #191). GREEN direcionado na branch anterior: 35/35 com PAT sintetico e negativas CR/LF internos; resultado do gate oficial neste novo SHA ainda nao esta comprovado.
+- Evidencias: workflow `Managed Staging Backup Evidence` run 41378442315 falhou com management_token_missing_or_invalid antes de acessar API Supabase; PR #314 documenta reparo sem ler segredos; houve falha real de governanca por delta ausente e este registro append-only corrige apenas a rastreabilidade. A identidade do token real continua nao verificada.
+- Pendencias: aguardar checks oficiais do SHA atualizado, auto-merge protegido; apos integracao repetir uma unica vez o workflow canonico sem concorrencia no runner; exigir metadata do backup do staging gerenciado, restore isolado com RLS/schema/Storage e teste de UI no SHA exato. Nao declarar API 200, recuperacao certificada ou quinze dias homologados.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
 ## 2026-11-01 — PR #312 — Prevencao de revisao humana universal, com CODEOWNERS restrito
 
 - Base SHA: 4a200d1c1220d869ac4b5f69ec981c98de8bc536
