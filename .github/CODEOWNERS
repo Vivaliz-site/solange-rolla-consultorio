@@ -13,3 +13,6 @@
 /src/modules/fiscal/ @fredmourao-ai
 /src/modules/signatures/ @fredmourao-ai
 /supabase/migrations/ @fredmourao-ai
+
+# Human-only security grants; ordinary code continues under the existing agent ownership.
+/security/owner-approvals/ @shopvivaliz-human

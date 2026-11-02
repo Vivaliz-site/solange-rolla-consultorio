@@ -237,3 +237,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: aguardar checks oficiais do SHA atualizado, auto-merge protegido; apos integracao repetir uma unica vez o workflow canonico sem concorrencia no runner; exigir metadata do backup do staging gerenciado, restore isolado com RLS/schema/Storage e teste de UI no SHA exato. Nao declarar API 200, recuperacao certificada ou quinze dias homologados.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-01 — PR #312 — Prevencao de revisao humana universal, com CODEOWNERS restrito
+
+- Base SHA: a21123e53bf4047526b5e40ea030a9727bc7a9f2
+- Impacto: shopvivaliz-human deve visualizar todas as PRs como colaborador mas nao revisar tecnicas comuns. Preserva os CODEOWNERS anteriores de fredmourao-ai, acrescenta somente /security/owner-approvals/ @shopvivaliz-human e impede owner humano wildcard/diretorios amplos ou review request automatico. Mudanca limitada a .github/CODEOWNERS, scripts/check_pr_review_routing.py, scripts/repository-governance-validate.sh, tests/test_pr_review_routing.py e este ledger; nenhuma alteracao clinica, fiscal, Supabase, RBAC, branch protection, runners, segredos ou producao.
+- Testes: RED oficial no Repository Governance Gate run 41355739773, job 124995259963, do HEAD ac7734947b16d36a24a7a5c397067335dceb0bfa: OWNER_REVIEW_ROUTING=PASS e os 7 testes de roteamento PASS, mas AUDIT_LEDGER_DELTA=FAIL pela falta de registro para 4 caminhos materiais. Dois agentes anexaram simultaneamente dois registros na branch do PR; o validator exige EXATAMENTE um AUDIT_DELTA_V1 adicional. Reconciliados agora em um unico bloco append-only relativo ao main, sem perder as evidencias e sem alterar o gate. CI do novo HEAD ainda deve certificar GREEN.
+- Evidencias: PR https://github.com/fredmourao-ai/solange-rolla-consultorio/pull/312; log oficial https://github.com/fredmourao-ai/solange-rolla-consultorio/actions/runs/41355739773; CODEOWNERS geral da conta humana na PR #311 foi descartado/fechado sem merge. O registro anterior de auditoria do main foi preservado integralmente e os dois relatos concorrentes da mesma PR foram semanticamente consolidados.
+- Pendencias: executar Repository Governance Gate e checks oficiais no SHA exato, integrar apenas quando branch protection permitir (sem interferir no runner single-writer), e comprovar CODEOWNERS no main. Preservar grants humanos somente nas PRs de seguranca formal e decisao comercial protegida. Esta correcao documental/de governanca nao certifica Solange #98 (15 dias de UI grafica), #191 (backup/restore Supabase gerenciado HTTP 401), nem releases ou dados clinicos.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->

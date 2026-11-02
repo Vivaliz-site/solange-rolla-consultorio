@@ -5,6 +5,10 @@ root="$(git rev-parse --show-toplevel)"
 cd "$root"
 mode="${1:-manual}"
 
+# Human account sees all PRs without becoming the default reviewer.
+python3 scripts/check_pr_review_routing.py
+python3 -m unittest tests/test_pr_review_routing.py -v
+
 # Fail before expensive CI if material changes lack a fresh audit delta.
 # The GitHub event supplies commit IDs. Local/manual runs self-test this
 # freshness gate but do not claim certification of an unselected release.
