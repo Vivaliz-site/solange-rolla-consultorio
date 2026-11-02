@@ -23,7 +23,7 @@ EXPECTED_REPOSITORIES = [
     "Vivaliz-site/mercadolivre-returns-recovery",
     "Vivaliz-site/shopvivaliz-m365",
     "Vivaliz-site/buscador",
-    "fredmourao-ai/mei-mg-email",
+    "Vivaliz-site/mei-mg-email",
     "Vivaliz-site/solange-rolla-consultorio",
 ]
 
