@@ -7,7 +7,6 @@ const root = fileURLToPath(new URL('../../', import.meta.url))
 const requiredRunnerLabels = ['self-hosted', 'Linux', 'ARM64', 'solange-ci']
 // Stateful staging workflows are pinned when they need access to persisted homologation state.
 const runnerLabelExceptionsByFile: Record<string, string[][]> = {
-  'pr-auto-merge.yml': [requiredRunnerLabels, ['ubuntu-latest']],
   'staging-promote.yml': [requiredRunnerLabels, [...requiredRunnerLabels, 'solange-staging-host']],
   'diag-staging-host.yml': [[...requiredRunnerLabels, 'solange-staging-host']],
   'historical-state-audit.yml': [[...requiredRunnerLabels, 'solange-staging-host'], [...requiredRunnerLabels, 'solange-staging-host']],
@@ -200,6 +199,30 @@ describe('repository governance contract', () => {
     expect(script).toContain('npm run modules:check')
     expect(script).toContain('npm run migrations:check')
     expect(script).toContain('--fileParallelism=false')
+  })
+
+  it('delegates duplicate application CI checks while preserving the mandatory governance gates', () => {
+    const script = projectFile('scripts/repository-governance-validate.sh')
+    const workflow = projectFile('.github/workflows/repository-governance.yml')
+    const ci = projectFile('.github/workflows/ci.yml')
+    expect(workflow).toContain('bash scripts/repository-governance-validate.sh ci')
+    expect(script).toContain('bash scripts/absolute-audit-governance-validate.sh')
+    expect(script).toContain('bash scripts/agent-continuity-validate.sh')
+    expect(script).toContain('check_project_boundaries')
+    expect(script).toContain('AUDIT_LEDGER_BASE_SHA')
+    expect(script).toContain('REPOSITORY_GOVERNANCE_APP_CHECKS=DELEGATED_TO_CI_IMPACT_SCOPE')
+    const policyCheck = script.indexOf('node --test tests/dependabot-no-pr-contract.test.mjs')
+    expect(policyCheck).toBeGreaterThan(-1)
+    expect(policyCheck).toBeLessThan(script.indexOf('REPOSITORY_GOVERNANCE_APP_CHECKS=DELEGATED_TO_CI_IMPACT_SCOPE'))
+    expect(script).toMatch(/if \[\[ "\$mode" == "ci" \]\]; then\s+echo .+\s+exit 0/u)
+    expect(script.indexOf('REPOSITORY_GOVERNANCE_APP_CHECKS=DELEGATED_TO_CI_IMPACT_SCOPE')).toBeLessThan(
+      script.indexOf('npm run lint'),
+    )
+    for (const check of ['lint', 'typecheck', 'unit', 'architecture', 'build', 'e2e']) {
+      expect(ci).toContain('  ' + check + ':')
+    }
+    expect(ci).toContain('scripts/ci-impact-selection.py')
+    expect(script).toContain('npm run build')
   })
 
   it('never tracks dependency installation directories', () => {

@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
+mode="${1:-manual}"
 
 # Fail before expensive CI if material changes lack a fresh audit delta.
 # The GitHub event supplies commit IDs. Local/manual runs self-test this
@@ -15,7 +16,7 @@ if [[ "${GITHUB_EVENT_NAME:-}" == "pull_request" || "${GITHUB_EVENT_NAME:-}" == 
 else
   echo 'AUDIT_LEDGER_DELTA=SKIP: non-PR/push run; not a certification result'
 fi
-bash scripts/absolute-audit-governance-validate.sh "${1:-manual}"
+bash scripts/absolute-audit-governance-validate.sh "$mode"
 bash scripts/agent-continuity-validate.sh
 staged_index="${SOLANGE_GIT_INDEX_FILE-}"
 
@@ -38,14 +39,27 @@ check_project_boundaries() {
 }
 
 check_project_boundaries
-[ -d node_modules ] || npm ci
-
 git diff --check
 if [ -n "$staged_index" ]; then
   GIT_INDEX_FILE="$staged_index" git diff --cached --check
 else
   git diff --cached --check
 fi
+
+# Keep this fast repository policy check in CI; Vitest does not run .mjs tests.
+node --test tests/dependabot-no-pr-contract.test.mjs
+
+# The independent required CI workflow runs the application's impact-selected
+# lint/typecheck/unit/build/E2E/DB suites. Repeating the entire suite here held
+# the shared self-hosted runner for 15 minutes. Always enforce the V5 audit
+# bridge, append-only ledger, continuity and project boundaries above.
+# Keep full local/pre-push validation below when mode is not CI.
+if [[ "$mode" == "ci" ]]; then
+  echo 'REPOSITORY_GOVERNANCE_APP_CHECKS=DELEGATED_TO_CI_IMPACT_SCOPE'
+  exit 0
+fi
+
+[ -d node_modules ] || npm ci
 npm run lint
 npm run typecheck
 npm run arch:check
@@ -56,7 +70,6 @@ else
   npm run migrations:check
 fi
 npm run test:run -- --fileParallelism=false
-node --test tests/dependabot-no-pr-contract.test.mjs
 
 if [ -f tests/test_ai_conflict_resolver.py ]; then
   if command -v python3 >/dev/null 2>&1; then
