@@ -360,3 +360,38 @@ jobs:
           fi
           export E2E_REUSE_EXISTING_SERVER=true
           npm run test:e2e
+
+  # GITHUB_TOKEN dispatches the four main validators after PR auto-merge.
+  # Their workflow_run callbacks are not a reliable transitive trigger.
+  # Dispatch the EXISTING Staging Promote workflow explicitly, from the last
+  # successful CI job, after exact-main SHA + the other three validators.
+  # No new runner or automation, and staging still checks backup before writes.
+  canonical-postmerge-staging-handoff:
+    name: Canonical exact-SHA staging handoff
+    needs: [impact_scope, lint, typecheck, unit, architecture, build, e2e]
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor == 'github-actions[bot]' &&
+      needs.impact_scope.result == 'success' &&
+      needs.lint.result == 'success' &&
+      needs.typecheck.result == 'success' &&
+      needs.unit.result == 'success' &&
+      needs.architecture.result == 'success' &&
+      needs.build.result == 'success' &&
+      needs.e2e.result == 'success'
+    runs-on: [self-hosted, Linux, ARM64, solange-ci]
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write # P2: only this job can dispatch the existing staging workflow.
+    steps:
+      - name: Checkout immutable validated SHA
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Verify canonical validators and dispatch existing staging workflow
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/dispatch-staging-after-ci.py
