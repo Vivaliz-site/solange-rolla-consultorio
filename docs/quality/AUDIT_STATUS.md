@@ -270,3 +270,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: exigir APPROVED exclusivo shopvivaliz-human no HEAD da PR P2 e checks/merge protegido; testar handoff pos-merge em main exato. Corrigir pelo canal oficial o secret staging/SUPABASE_ACCESS_TOKEN ausente/invalido antes de promover; o Staging Promote permanece fail-closed no managed backup e nao valida restore/Storage. #191 e #98 continuam NAO_APTO ate restore isolado e quinze dias de UI real em SHA publicado.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-05 — PR #317 — Sincronizacao de manifesto global aprovada na PR canonica #74
+
+- Base SHA: f8a11c2cf8d623921ddac3e89a3a71c62bc42a9c
+- Impacto: alteracao documental e limitada de docs/quality/GLOBAL_AUDIT_MANIFEST.json para retirar somente o pin Git imutavel de REGRAS-AGENTES-CENTRALIZADAS.md, substituindo-o por quatro marcadores obrigatorios de Auditoria V5 presentes no documento; os demais 29 pins e protecoes continuam inalterados. Esta entrada de ledger documenta o delta; nao modifica o aplicativo clinico, banco, dependencias, usuarios, credenciais, fluxos de pacientes ou producao.
+- Testes: diff da PR #317 verificado com apenas o manifesto (6 adicoes e 1 exclusao) antes desta entrada, comparado com o blob canonico do pipeline apos PR #74. Absolute Audit Governance concluido com success no HEAD anterior 0dcff7ce960142faf2420ad92bf3142241f5c65e; Repository Governance Gate falhou nesse HEAD por AUDIT_LEDGER_DELTA=FAIL (ausencia deste registro); novos checks deste HEAD com ledger ainda precisam passar.
+- Evidencias: PR canonica https://github.com/Vivaliz-site/-shopvivaliz-pipeline/pull/74 aprovada por shopvivaliz-human; PR espelho https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/317; Repository Governance Gate run 42064966747, job 127376452415 confirmou a falta do delta em 2026-11-05. A aprovacao humana da versao anterior da PR #317 nao substitui revisao do novo HEAD se as regras de protecao exigirem.
+- Pendencias: obter CI/Governance/Database e outros checks verdes no HEAD atualizado, solicitar novamente a revisao formal de shopvivaliz-human se a aprovacao ficar stale, integrar pela fila/protecao oficial e confirmar paridade do manifesto no main. A plataforma clinica permanece NAO_APTO para certificacao E2E de staging/producao, backup/restore gerenciado, evidencias clinicas e demais exigencias anteriores.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
