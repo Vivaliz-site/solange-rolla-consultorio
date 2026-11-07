@@ -188,8 +188,8 @@ class ManagedEvidenceTests(unittest.TestCase):
     def test_management_token_control_characters_fail_closed_before_provider(self):
         # Neither provider nor HTTP transport should see malformed bearer values.
         # A mock opener would accept the request if the validator missed a control.
-        for value in (TOKEN + "\\x00", TOKEN + "\\tINJECT",
-                      TOKEN + "\\vINJECT", TOKEN + "\\u2028INJECT"):
+        for value in (TOKEN + "\x00", TOKEN + "\tINJECT",
+                      TOKEN + "\vINJECT", TOKEN + "\u2028INJECT"):
             with self.subTest(control=repr(value[-8:])), self.assertRaises(checker.AuditFailure) as error:
                 checker.fetch_backups(REF, value, opener=lambda *a, **kw: None)
             self.assertEqual(str(error.exception), "management_token_missing_or_invalid")
