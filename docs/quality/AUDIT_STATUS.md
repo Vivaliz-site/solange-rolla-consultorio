@@ -294,6 +294,17 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 <!-- /AUDIT_DELTA_V1 -->
 
 <!-- AUDIT_DELTA_V1 -->
+## 2026-11-07 — Remocao de checklist universal compulsorio por autorizacao do proprietario
+
+- Base SHA: 4a342ccabb556fb03c70e7ea6df22b9de374902d
+- Impacto: revisao apenas documental das instrucoes de AGENTS, CLAUDE, GEMINI e Copilot, mais contrato de testes. Remove a obrigatoriedade de certificar um checklist por subetapa em operacoes rotineiras P0/P1 ja autorizadas. Nao altera banco clinico, aplicacao, pacientes, Supabase, auth, deploy ou privilegios; preserva MFA, RBAC, branch protection, lease/fencing e provas finais de auditoria. Fonte da revisao da controladora: Vivaliz-site/site-shopvivaliz PR #3771 integrada e validada no SHA 8fa9a80f21bdee31a761363e8a3d8d9b7df9882c.
+- Testes: contrato de checklist proporcional revisado na branch e contract SUCCESS em GitHub Actions run 42331612511 no HEAD 6114939c41e093763c7e03bd75088b7e699f4fee; db SUCCESS 42331612490 e absolute-audit-governance SUCCESS 42331612483. Governance Gate identificou em RED a falta deste delta no run 42331612465, job 128279193137; novo CI apos este commit ainda a validar.
+- Evidencias: PR https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/319; auditoria canonica central https://github.com/Vivaliz-site/site-shopvivaliz/pull/3771; logs do GitHub Actions sobre a ausencia anterior do AUDIT_DELTA_V1, com numero e SHA registrados acima. Nenhuma interacao com dados de pacientes ou credenciais.
+- Pendencias: certificar no HEAD atualizado o gate de governanca, suites e merge protegido; validar que os quatro documentos adotam a regra proporcional no main. Manter a auditoria clinica UI/backup/restore e demais pendencias originais como NAO_APTO ate evidencia independente real; nao declarar producao homologada por esta mudanca documental.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
 ## 2026-11-07 — Restore manual fail-closed contra banco remoto, replay inseguro e falso verde RLS
 
 - Base SHA: 4a342ccabb556fb03c70e7ea6df22b9de374902d
