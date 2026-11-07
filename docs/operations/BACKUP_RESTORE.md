@@ -1,5 +1,32 @@
 # Backup e Restore
 
+## Estado da fonte publicada e gate de restauração — 07/11/2026
+
+**Prevalece sobre os exemplos históricos de Docker local abaixo.** A homologação atual usa um projeto Supabase **gerenciado**, não o PostgreSQL Docker da VM. No [workflow oficial de metadados #42326436389](https://github.com/Vivaliz-site/solange-rolla-consultorio/actions/runs/42326436389), o PAT de Management API foi efetivamente injetado e a consulta retornou `no_completed_managed_backup` em 07/11, após superar a falha anterior de injeção. **Isso não comprova um backup recente nem um restore.** O Supabase [não oferece backup diário automático no plano Free](https://supabase.com/kb/faqs/platform/free-plan-backups); a alternativa suportada sem upgrade é uma exportação lógica da **fonte gerenciada real** com Supabase CLI/`pg_dump`, armazenada com segurança fora do projeto e restaurada em ambiente isolado. **Não** tratar dump do Docker local como backup do Supabase publicado. A criação/armazenamento seguro de backup remoto e a prova de Storage/chaves ainda exigem implementação, credenciais escopadas, destino privado validado e aceitação P2 se aplicável. Não salvar dumps clínicos em repositório ou logs.
+
+### Restauração manual restrita a banco descartável
+
+O script `scripts/verify-backup-restore.sh` agora recusa qualquer URI hospedada/remota, inclusive Supabase e URLs que omitem literalmente a palavra "production". Também recusa credenciais embutidas na URL, destino que não seja **`solange_restore` em loopback**, checksum `.sha256` ausente/divergente, banco reutilizado ou sem marcador verificável. Os dumps são restaurados em transação única com erro fatal, seguidos de verificação das tabelas `public.profiles`, `clinical.records`, `auth.users`, de RLS em `clinical.records` e de política clínica.
+
+Somente em PostgreSQL **local e descartável**, criado do zero e nunca com produção conectada por túnel, preparar o marcador antes do exercício:
+
+```sql
+CREATE DATABASE solange_restore TEMPLATE template0;
+ALTER DATABASE solange_restore SET shopvivaliz.restore_drill_only = 'yes';
+```
+
+Com um dump da origem correta e checksum correspondente, usar uma identidade local restrita e senha via `PGPASSWORD` ou arquivo `pgpass`, **não na URL**:
+
+```sh
+RESTORE_ENV=staging_restore_drill \
+BACKUP_FILE=/caminho/privado/backup-validado.dump \
+RESTORE_DB_URL=postgresql://postgres@127.0.0.1:55432/solange_restore \
+scripts/verify-backup-restore.sh
+```
+
+O exemplo é documental: não dispara backup nem restore, não prova que o volume, chave ou dados estão disponíveis. A restauração real de staging no Supabase gerenciado **não** foi executada. O verificador Docker separado continua apropriado para o dump portátil em contêiner novo, mas não prova a fonte gerenciada.
+
+
 ## Objetivos
 
 - RPO alvo: 24 horas.

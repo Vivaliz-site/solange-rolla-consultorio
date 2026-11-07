@@ -135,7 +135,9 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_managed_backup_evidence.py' -v
           python3 -m unittest discover -s tests -p 'test_backup_source_guard.py' -v
       - name: Staging Python security regressions (fail closed)
-        run: python3 -m unittest discover -s tests -p 'test_staging_*.py' -v
+        run: |
+          python3 -m unittest discover -s tests -p 'test_staging_*.py' -v
+          python3 -m unittest discover -s tests -p 'test_restore_drill_target_guard.py' -v
 
   architecture:
     needs: impact_scope

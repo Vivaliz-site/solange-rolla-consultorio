@@ -303,3 +303,15 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: certificar no HEAD atualizado o gate de governanca, suites e merge protegido; validar que os quatro documentos adotam a regra proporcional no main. Manter a auditoria clinica UI/backup/restore e demais pendencias originais como NAO_APTO ate evidencia independente real; nao declarar producao homologada por esta mudanca documental.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-07 — Restore manual fail-closed contra banco remoto, replay inseguro e falso verde RLS
+
+- Base SHA: 0e19caace127fd706319c848da7aa0ff2ed1e6f4
+- Impacto: #191 e #98. A restauracao manual generica `scripts/verify-backup-restore.sh` vetava apenas URLs contendo as strings "production"/"prod.", mas aceitava host real Supabase sem essas palavras, destino local nao isolado, senha em URI, checksum ausente, e declarava sucesso com queries que retornavam false sem validacao efetiva de tabelas/RLS. Um `RESTORE_ENV=staging_restore_drill` isolado nao impedia restore sobre banco clinico remoto.
+- Correcao minima: URIs estritamente locais loopback com banco descartavel `solange_restore`, sem senha embutida ou parametros; exigencia de marcador server-side somente no banco descartavel novo e sem tabelas aplicacionais; arquivo checksum obrigatorio e comparado antes de conectar; arquivo `pg_restore` valido e restore `--single-transaction --exit-on-error`; verificacao fail-closed de public.profiles, clinical.records, auth.users, RLS habilitado e politica clinica. Nenhum dump clinico, banco real, segredo ou projeto Supabase foi acessado, modificado ou exposto.
+- Testes: RED real do codigo pre-fix no checkout isolado do branch apenas com fixtures sinteticas, task MCP `a8490e79-3293-4a1f-9f75-5296e973d272`, `8 tests, 7 failures`. GREEN pos-fix task `26324057-8868-424c-ab8d-86ce6a47835c` exit0, 8/8 novos testes, 12/12 source-guard original, bash -n, py_compile e git diff --check. Adicionado gate do novo teste ao mesmo job `unit` do CI self-hosted existente, sem job, worker, runner ou schedule adicionais; regressao que verifica propria ligacao ao CI.
+- Evidencias: branch `fix/restore-drill-local-target-fail-closed-20261107`, scripts/verify-backup-restore.sh, tests/test_restore_drill_target_guard.py, tests/test_backup_source_guard.py, .github/workflows/ci.yml, docs/operations/BACKUP_RESTORE.md. O PAT Supabase da homologacao agora chega ao provedor: workflow de metadata #42326436389 registrou `no_completed_managed_backup`; Free Plan nao possui backups automaticos, requer exportacao da fonte gerenciada real + destino privado seguro e restore isolado com controles P2 quando aplicaveis. Este fix nao ativa nova rotina de backup nem certifica a fonte publica.
+- Pendencias: CI oficial HEAD exato, main protected merge, testes pos-merge, ensaio real em banco descartavel e prova de backup da fonte gerenciada + objetos Storage/RLS e jornada UI sintetica. Nao usar esta PR para habilitar escrita clinica nem promover staging.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->

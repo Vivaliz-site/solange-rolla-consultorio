@@ -113,6 +113,12 @@ exit 13
         result=self.run_cmd(HEALTH)
         self.assertNotEqual(result.returncode,0)
         self.assertIn("checksum",result.stderr)
+    def test_existing_ci_unit_job_runs_restore_target_security_regressions(self):
+        # An apparently green normal CI must not omit the destination guard.
+        workflow=(ROOT/".github"/"workflows"/"ci.yml").read_text()
+        self.assertIn("test_restore_drill_target_guard.py",workflow)
+        self.assertIn("Staging Python security regressions",workflow)
+
     def test_no_sensitive_material_in_diagnostics(self):
         self.env["FAKE_RUNTIME_URL"]="https://SECRET_MARKER@example.invalid"
         result=self.run_cmd(BACKUP)
