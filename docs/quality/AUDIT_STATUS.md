@@ -281,3 +281,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: obter CI/Governance/Database e outros checks verdes no HEAD atualizado, solicitar novamente a revisao formal de shopvivaliz-human se a aprovacao ficar stale, integrar pela fila/protecao oficial e confirmar paridade do manifesto no main. A plataforma clinica permanece NAO_APTO para certificacao E2E de staging/producao, backup/restore gerenciado, evidencias clinicas e demais exigencias anteriores.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-06 — staging backup token injection classification and ASCII controls — 2026-11-06
+
+- Base SHA: d721bf485abd744333715b6edfca6bbe623ea91b
+- Impacto: #191/#98; a verificacao do backup Supabase gerenciado nao diferenciava o segredo ausente no contexto do job de um valor fornecido, mas malformado, e podia encaminhar controles TAB/NUL/separadores Unicode ao transporte HTTP. O novo preflight diagnostica `management_token_not_injected` exclusivamente quando `SUPABASE_ACCESS_TOKEN` efetivamente nao e injetado; valores presentes, mas invalidos, continuam falhando como `management_token_missing_or_invalid`. Aceita so bytes ASCII imprimiveis no bearer, comprimento limitado, e normaliza apenas CR/LF terminais. Nao busca/le, imprime, sincroniza nem rotaciona credencial.
+- Testes: RED sintetico contra o codigo anterior no branch, com 37 testes, 2 FAIL (`test_management_token_control_characters_fail_closed_before_provider` e `test_missing_environment_token_is_distinguished_without_exposing_credentials`), MCP task `0d08d714-2cf6-4615-88f8-277f7511a8d5`; GREEN no HEAD `cc22a04c468d1fa24871f82cd86bf871ea7bcd36`, 37/37 `test_managed_backup_evidence.py` + 12/12 `test_backup_source_guard.py`, py_compile e git diff --check, task `8bfe5c98-5384-47d3-96c5-80d714848af8` exit0. Nenhuma API externa, Supabase real ou banco consultado.
+- Evidencias: `scripts/verify-managed-backup-evidence.py` e `tests/test_managed_backup_evidence.py`, branch `fix/staging-backup-token-input-contract-20261106`; marcador diagnostico nao revela token, REF, payload ou headers. O workflow existente permanece inalterado, usando runner self-hosted e environment staging.
+- Pendencias: CI oficial no SHA atualizado, merge protegido e readback main; diagnosticar/reprovisionar apenas pela via oficial e grant P2, quando exigido, o valor real do secret `SUPABASE_ACCESS_TOKEN` no environment staging. Uma variavel/secret com nome presente nao e prova de injeção. Exigir backup fresco da Management API, restore isolado e Storage/RLS, certificacao UI de 15 dias no SHA publicado antes de APTO. Nao alterar pacientes, base ou producao clinica.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
