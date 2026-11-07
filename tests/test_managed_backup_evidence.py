@@ -185,6 +185,30 @@ class ManagedEvidenceTests(unittest.TestCase):
             with self.subTest(which=malformed[:3]), self.assertRaises(checker.AuditFailure):
                 checker.fetch_backups(REF, malformed, opener=lambda *args, **kwargs: None)
 
+    def test_management_token_control_characters_fail_closed_before_provider(self):
+        # Neither provider nor HTTP transport should see malformed bearer values.
+        # A mock opener would accept the request if the validator missed a control.
+        for value in (TOKEN + "\x00", TOKEN + "\tINJECT",
+                      TOKEN + "\vINJECT", TOKEN + "\u2028INJECT"):
+            with self.subTest(control=repr(value[-8:])), self.assertRaises(checker.AuditFailure) as error:
+                checker.fetch_backups(REF, value, opener=lambda *a, **kw: None)
+            self.assertEqual(str(error.exception), "management_token_missing_or_invalid")
+            self.assertNotIn(TOKEN, str(error.exception))
+
+    def test_missing_environment_token_is_distinguished_without_exposing_credentials(self):
+        out, err = io.StringIO(), io.StringIO()
+        with patch.dict("os.environ", {
+                "SUPABASE_STAGING_PROJECT_REF": REF,
+                "SUPABASE_PRODUCTION_PROJECT_REF": PROD,
+                "NEXT_PUBLIC_SUPABASE_URL": URL,
+                "SUPABASE_ACCESS_TOKEN": "",
+            }), redirect_stdout(out), redirect_stderr(err):
+            code = checker.main([])
+        self.assertEqual(code, 1)
+        self.assertIn("reason=management_token_not_injected", err.getvalue())
+        self.assertNotIn(TOKEN, out.getvalue() + err.getvalue())
+        self.assertNotIn(REF, out.getvalue() + err.getvalue())
+
     def test_api_missing_auth_fails_closed(self):
         with self.assertRaises(checker.AuditFailure):
             checker.fetch_backups(REF,"")

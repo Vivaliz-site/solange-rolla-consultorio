@@ -49,12 +49,14 @@ def validate_environment(staging_ref: str, production_ref: str, public_url: str)
 def fetch_backups(staging_ref: str, access_token: str, *, opener=urlopen) -> dict:
     if not REF_RE.fullmatch(staging_ref or ""):
         raise AuditFailure("staging_ref_invalid")
-    # Operators sometimes paste a PAT from a line-terminated secret file.
-    # Normalize ONLY trailing CR/LF before constructing the HTTP header.
-    # Embedded control characters or surrounding spaces remain invalid.
+    # Accept only visible ASCII in a bearer header; urllib may otherwise
+    # pass tabs, NUL or Unicode separators to the transport. Do not let a
+    # synthetic provider or proxy interpret those as trusted credentials.
+    # Normalize ONLY terminal CR/LF from a pasted secret file.
     header_token = access_token.rstrip("\r\n")
     if (not header_token or header_token != header_token.strip()
-            or any(c in header_token for c in "\r\n")):
+            or len(header_token) > 2048
+            or any(ord(c) < 33 or ord(c) > 126 for c in header_token)):
         raise AuditFailure("management_token_missing_or_invalid")
     request = Request(
         "https://api.supabase.com/v1/projects/" + staging_ref + "/database/backups",
@@ -169,7 +171,13 @@ def main(argv: list[str] | None = None) -> int:
             os.getenv("SUPABASE_PRODUCTION_PROJECT_REF", ""),
             os.getenv("NEXT_PUBLIC_SUPABASE_URL", ""),
         )
-        payload = fetch_backups(staging_ref, os.getenv("SUPABASE_ACCESS_TOKEN", ""))
+        # Name-only presence in GitHub Environment metadata is not proof
+        # that the runner received a PAT. Report an empty injection explicitly,
+        # never print, hash or persist the token.
+        injected_token = os.getenv("SUPABASE_ACCESS_TOKEN", "")
+        if not injected_token:
+            raise AuditFailure("management_token_not_injected")
+        payload = fetch_backups(staging_ref, injected_token)
         summary = verify_backups(
             payload, dt.datetime.now(dt.timezone.utc), args.max_age_seconds,
         )
