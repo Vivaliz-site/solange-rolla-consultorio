@@ -303,3 +303,15 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: certificar no HEAD atualizado o gate de governanca, suites e merge protegido; validar que os quatro documentos adotam a regra proporcional no main. Manter a auditoria clinica UI/backup/restore e demais pendencias originais como NAO_APTO ate evidencia independente real; nao declarar producao homologada por esta mudanca documental.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-07 — PR #319 — governanca proporcional para agentes, sem checklist universal
+
+- Base SHA: `4a342ccabb556fb03c70e7ea6df22b9de374902d`.
+- Escopo: os cinco arquivos materiais da PR #319 sao `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` e `tests/test_agent_checklist_contract_v1.py`. O proprietario solicitou revogar a exigencia global introduzida em 31/10 de executar `plan-checklist` e `check-step` em cada subetapa, que bloqueava tarefas tecnicas P0/P1 por burocracia; esta alteracao documenta checklist opcional e atualiza o teste para exigir proporcionalidade sem enfraquecer MFA, RBAC, aprovacao humana formal, branch protection ou integridade de prova.
+- Diagnostico/RED: o job `governance-gate` da PR #319 (run `42331612465`, job `128279193137`) retornou `AUDIT_LEDGER_DELTA=FAIL: material paths changed (5) without an updated docs/quality/AUDIT_STATUS.md`. Esse bloqueio e valido para uma alteracao transversal, mas exige este registro uma unica vez, nao checklist por subcomando.
+- GREEN observado no HEAD anterior `6114939c41e093763c7e03bd75088b7e699f4fee`: `absolute-audit-governance`, `contract`, `impact_scope` e `db` aprovaram no GitHub Actions. Novos checks do HEAD com este ledger ainda precisam passar; nao declarar sucesso antecipado.
+- Evidencia independente: PR central ShopVivaliz #3771 integrada no commit `8fa9a80f21bdee31a761363e8a3d8d9b7df9882c` e controladora promovida ao mesmo SHA; as instrucoes seguem a governanca global proporcional, preservando controles de identidade, seguranca e validacao. Este delta nao mexe em pacientes, base clinica, segredo, billing, login, workflow de deploy nem testes transacionais.
+- Pendencias: exigir checks verdes no HEAD definitivo, merge protegido, readback no `main` e CI pos-merge. Nao foram executados nesta alteracao testes de UI clinica, backup/restore gerenciado nem staging/produção; a certificacao clinica geral permanece `NAO_APTO` e suas dividas historicas nao sao encerradas por este registro.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
