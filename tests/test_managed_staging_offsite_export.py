@@ -5,6 +5,9 @@ No clinical records, passwords, tokens, OCI writes or real network calls.
 from __future__ import annotations
 
 import importlib.util
+import os
+import subprocess
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -119,6 +122,90 @@ class ManagedOffsiteContract(unittest.TestCase):
 
     def test_explicit_storage_gap_does_not_certify_recovery(self):
         self.assertEqual(backup.BACKUP_SCOPE_VERDICT, "DB_ONLY_STORAGE_NOT_BACKED_UP")
+
+    def test_existing_workflow_never_exports_on_schedule(self):
+        workflow = (ROOT / ".github" / "workflows" /
+                    "staging-managed-backup-evidence.yml").read_text()
+        self.assertIn("cron: '29 4 * * *'", workflow)
+        self.assertIn("github.event_name == 'workflow_dispatch' && inputs.mode == 'offsite_export'", workflow)
+        self.assertIn("python3 scripts/backup-managed-staging-offsite.py --execute", workflow)
+        self.assertIn("SOLANGE_MANAGED_BACKUP_OWNER_GRANT", workflow)
+
+    def test_synthetic_full_encrypted_upload_and_readback(self):
+        # Entire exercise uses fake binaries and fictitious data; no real network
+        # or live staging values. The backup must remain labeled DB-only.
+        with tempfile.TemporaryDirectory(prefix="solange-encrypted-export-") as t:
+            root = Path(t)
+            fakebin = root / "bin"
+            fakebin.mkdir()
+            remote = root / "fake-oci"
+            remote.mkdir()
+            pgbin = fakebin / "pg_dump17"
+            pgbin.write_text(
+                "#!/usr/bin/env python3\nimport sys\n"
+                "if '--version' in sys.argv:\n"
+                " print('pg_dump (PostgreSQL) 17.6')\n"
+                "else:\n sys.stdout.buffer.write(b'fictional-fixture-only-' * 120)\n"
+            )
+            gpg = fakebin / "gpg"
+            gpg.write_text(
+                "#!/usr/bin/env python3\nimport sys\n"
+                "if '--list-keys' in sys.argv:\n"
+                f" print('fpr:::::::::{FINGERPRINT}:')\n"
+                "else:\n sys.stdout.buffer.write(b'ENCRYPTED_FIXTURE:' + sys.stdin.buffer.read())\n"
+            )
+            cli = fakebin / "oci"
+            cli.write_text(
+                "#!/usr/bin/env python3\n"
+                "import os,sys,pathlib,shutil,json\n"
+                "a=sys.argv[1:]\n"
+                "if a[:3]==['os','bucket','get']:\n"
+                " print(json.dumps({'data': {'public-access-type':'NoPublicAccess'}}));sys.exit(0)\n"
+                "if a[:3] not in (['os','object','put'],['os','object','get']):\n"
+                " sys.exit(43)\n"
+                "name=a[a.index('--name')+1];file=pathlib.Path(a[a.index('--file')+1]);"
+                "remote=pathlib.Path(os.environ['FAKE_OCI_ROOT'])/name\n"
+                "if a[2]=='put':\n"
+                " remote.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(file,remote)\n"
+                "else:\n"
+                " shutil.copyfile(remote,file)\n"
+                " if os.environ.get('FAKE_TAMPER')=='1':file.write_bytes(b'tampered')\n"
+            )
+            for binary in (pgbin, gpg, cli):
+                binary.chmod(0o700)
+            e = dict(os.environ)
+            e.update(good_env())
+            e.update({
+                "HOME": str(root), "PATH": f"{fakebin}:{e.get('PATH','')}",
+                "SOLANGE_PGDUMP17_BIN": str(pgbin),
+                "SOLANGE_OCI_CLI_BIN": str(cli),
+                "SOLANGE_MANAGED_BACKUP_OWNER_GRANT": "scoped-191-v1",
+                "FAKE_OCI_ROOT": str(remote),
+            })
+            result = subprocess.run(
+                ["python3", str(SCRIPT), "--execute"], env=e,
+                capture_output=True, text=True, timeout=10
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("MANAGED_DB_ENCRYPTED_OFFSITE=PASS", result.stdout)
+            self.assertIn("DB_ONLY_STORAGE_NOT_BACKED_UP", result.stdout)
+            self.assertNotIn("synthetic-password-never-log", result.stdout + result.stderr)
+            encrypted = list(remote.glob("**/*.dump.gpg"))
+            self.assertEqual(len(encrypted), 1)
+            self.assertTrue(encrypted[0].read_bytes().startswith(b"ENCRYPTED_FIXTURE:"))
+            self.assertEqual(len(list(remote.glob("**/*.manifest.json"))), 1)
+            manifest = json.loads(next(remote.glob("**/*.manifest.json")).read_text())
+            self.assertEqual(manifest["source_ref"], STAGE)
+            self.assertEqual(manifest["storage_objects"], "NOT_BACKED_UP")
+            self.assertFalse(list(root.glob("**/*.dump")), "unencrypted dump must never persist")
+            e["FAKE_TAMPER"] = "1"
+            tampered = subprocess.run(
+                ["python3", str(SCRIPT), "--execute"], env=e,
+                capture_output=True, text=True, timeout=10
+            )
+            self.assertEqual(tampered.returncode, 2)
+            self.assertIn("remote_ciphertext_digest_mismatch", tampered.stderr)
+            self.assertNotIn("synthetic-password-never-log", tampered.stderr)
 
 
 if __name__ == "__main__":
