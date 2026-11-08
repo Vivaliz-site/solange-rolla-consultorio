@@ -338,4 +338,3 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: sem grant P2 formal para arquivo security/owner-approvals/managed-staging-backup-191.json, sem chave publica GPG e chave privada em custodia independente, sem acesso a bucket privado OCI, sem cliente PostgreSQL 17 no runner e sem backup separado dos 63 objetos Storage; nenhum dump real, restore isolado ou E2E UI 15 dias pode ser certificado. Staging Promote deve permanecer fail-closed e nao se pode marcar APTO.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
-
