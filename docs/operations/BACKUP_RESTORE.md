@@ -124,7 +124,9 @@ de todas as condicoes abaixo serem comprovadas:
   nao transportar a senha em URL ou mensagem.
 - **Criptografia:** provisionar e conferir uma chave GPG publica de backup no
   runner e registrar sua fingerprint em `SOLANGE_BACKUP_GPG_RECIPIENT`.
-  A chave **privada e a prova de recuperabilidade** devem ser mantidas fora da VM.
+  O preflight consulta `gpg --list-secret-keys` e falha fechado caso a
+  chave privada do recipient esteja presente no runner. A chave privada
+  e a prova de recuperabilidade devem permanecer fora da VM.
 - **Destino OCI:** configurar namespace e nome de bucket privado nas vars
   `SOLANGE_BACKUP_OCI_NAMESPACE` e `SOLANGE_BACKUP_OCI_BUCKET`; a
   identidade oficial `instance_principal` deve conseguir `bucket get`,
@@ -138,8 +140,10 @@ de todas as condicoes abaixo serem comprovadas:
   Nao ampliar IAM nem criar bucket sem grant e custo verificados.
 - **P2:** merge pessoal de `shopvivaliz-human` para
   `security/owner-approvals/managed-staging-backup-191.json`, autorizando
-  apenas fonte e bucket exatos com expiracao ate sete dias. So depois, o
-  owner provisiona o segredo `SOLANGE_MANAGED_BACKUP_OWNER_GRANT`
+  fonte, bucket e `gpg_fpr` exato do recipient aprovado (fingerprint
+  uppercase de 40 digitos hexadecimais), com expiracao ate sete dias.
+  Drift da chave para outro recipient bloqueia a exportacao.
+  So depois, o owner provisiona o segredo `SOLANGE_MANAGED_BACKUP_OWNER_GRANT`
   com o valor `scoped-191-v1` no environment `staging`.
   Sem os dois gates, a tentativa falha **antes de qualquer dump**.
 - **Estado de liberacao:** a exportacao acima e **DB_ONLY**. Mesmo um

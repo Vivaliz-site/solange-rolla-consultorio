@@ -242,8 +242,16 @@ describe('GitHub Actions runner policy', () => {
     const jobs = parsed?.jobs as Record<string, Record<string, unknown>> | undefined
     const verifier = jobs?.['verify-provider-backups']
     expect(verifier?.['runs-on']).toEqual([...runnerLabels, 'solange-staging-host'])
-    expect(verifier?.if).toBe("github.ref == 'refs/heads/main'")
+    expect(verifier?.if).toBe(
+      "github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || inputs.mode != 'offsite_export')",
+    )
     expect(verifier?.environment).toBe('staging')
+    const exporter = jobs?.['export-managed-staging-encrypted']
+    expect(exporter?.['runs-on']).toEqual([...runnerLabels, 'solange-staging-host'])
+    expect(exporter?.if).toBe(
+      "github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.mode == 'offsite_export'",
+    )
+    expect(exporter?.environment).toBe('staging')
     expect(workflow?.content).toContain('persist-credentials: false')
   })
 

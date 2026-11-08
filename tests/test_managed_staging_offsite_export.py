@@ -101,6 +101,7 @@ class ManagedOffsiteContract(unittest.TestCase):
                 "action": "managed_staging_db_encrypted_offsite",
                 "source_ref": STAGE,
                 "oci_bucket": env["SOLANGE_BACKUP_OCI_BUCKET"],
+                "gpg_fpr": FINGERPRINT,
                 "scope": backup.BACKUP_SCOPE_VERDICT,
                 "expires_at": "2026-11-09T02:00:00Z",
             }
@@ -112,10 +113,26 @@ class ManagedOffsiteContract(unittest.TestCase):
             with self.assertRaisesRegex(backup.BackupBlocked, "owner_approved_grant_scope_or_expiry_invalid"):
                 backup.require_owner_grant(env, grant_path=path, now=now)
             payload["source_ref"] = STAGE
+            payload["gpg_fpr"] = "0" * 40
+            path.write_text(json.dumps(payload))
+            with self.assertRaisesRegex(backup.BackupBlocked, "owner_approved_grant_scope_or_expiry_invalid"):
+                backup.require_owner_grant(env, grant_path=path, now=now)
+            payload["gpg_fpr"] = FINGERPRINT
             payload["expires_at"] = "2026-11-07T02:00:00Z"
             path.write_text(json.dumps(payload))
             with self.assertRaisesRegex(backup.BackupBlocked, "owner_approved_grant_scope_or_expiry_invalid"):
                 backup.require_owner_grant(env, grant_path=path, now=now)
+
+    def test_runner_must_not_possess_recipient_private_key(self):
+        cfg = backup.validate_config(good_env())
+        with patch.object(backup, "_run_command", side_effect=[
+            b"pg_dump (PostgreSQL) 17.6\n",
+            f"fpr:::::::::{FINGERPRINT}:\n".encode(),
+            f"sec:u:2048:1:AAAA:0:0::::::\nfpr:::::::::{FINGERPRINT}:\n".encode(),
+        ]) as run:
+            with self.assertRaisesRegex(backup.BackupBlocked, "offline_private_key_present_on_runner"):
+                backup.ensure_preflight(cfg)
+            self.assertEqual(run.call_count, 3, "must block before private OCI lookup or DB access")
 
     def test_private_oci_bucket_mandatory(self):
         backup.require_private_oci_bucket({"public-access-type": "NoPublicAccess"})
@@ -177,6 +194,7 @@ class ManagedOffsiteContract(unittest.TestCase):
                 "#!/usr/bin/env python3\nimport sys\n"
                 "if '--list-keys' in sys.argv:\n"
                 f" print('fpr:::::::::{FINGERPRINT}:')\n"
+                "elif '--list-secret-keys' in sys.argv:\n sys.exit(0)\n"
                 "else:\n sys.stdout.buffer.write(b'ENCRYPTED_FIXTURE:' + sys.stdin.buffer.read())\n"
             )
             cli = fakebin / "oci"
@@ -211,6 +229,7 @@ class ManagedOffsiteContract(unittest.TestCase):
                 "action": "managed_staging_db_encrypted_offsite",
                 "source_ref": STAGE,
                 "oci_bucket": "private-clinic-backup",
+                "gpg_fpr": FINGERPRINT,
                 "scope": backup.BACKUP_SCOPE_VERDICT,
                 "expires_at": (dt.datetime.now(dt.timezone.utc) +
                                dt.timedelta(hours=1)).isoformat(),

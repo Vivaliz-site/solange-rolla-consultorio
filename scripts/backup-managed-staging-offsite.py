@@ -107,6 +107,7 @@ def require_owner_grant(env, cfg=None, *, grant_path=None, now=None):
             or payload.get("action") != "managed_staging_db_encrypted_offsite"
             or payload.get("source_ref") != cfg["source_ref"]
             or payload.get("oci_bucket") != cfg["oci_bucket"]
+            or payload.get("gpg_fpr") != cfg["gpg_fpr"]
             or payload.get("scope") != BACKUP_SCOPE_VERDICT
             or expires.tzinfo is None or not current < expires <= current + dt.timedelta(days=7)):
         raise BackupBlocked("owner_approved_grant_scope_or_expiry_invalid")
@@ -177,6 +178,15 @@ def ensure_preflight(cfg):
     ]
     if cfg["gpg_fpr"] not in fingerprints:
         raise BackupBlocked("offline_encryption_recipient_unavailable")
+    # Independent key custody: no matching secret/private key may be present
+    # on the export runner. This is a fail-closed preflight before DB access.
+    secret_listing = _run_command(
+        ["gpg", "--batch", "--with-colons", "--fingerprint",
+         "--list-secret-keys", cfg["gpg_fpr"]], want_stdout=True,
+    ).decode("utf8", "replace")
+    if any(line.startswith(("sec:", "ssb:", "fpr:"))
+           for line in secret_listing.splitlines()):
+        raise BackupBlocked("offline_private_key_present_on_runner")
     oci = cfg["oci_binary"]
     bucket_raw = _run_command([
         oci, "os", "bucket", "get", "--auth", "instance_principal",
