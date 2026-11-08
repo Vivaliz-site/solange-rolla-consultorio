@@ -200,6 +200,11 @@ class ManagedOffsiteContract(unittest.TestCase):
         self.assertIn("github.event_name == 'workflow_dispatch' && inputs.mode == 'offsite_export'", workflow)
         self.assertIn("python3 scripts/backup-managed-staging-offsite.py --execute", workflow)
         self.assertIn("SOLANGE_MANAGED_BACKUP_OWNER_GRANT", workflow)
+        self.assertIn(
+            "SOLANGE_PGDUMP17_BIN: ${{ vars.SOLANGE_PGDUMP17_BIN || "
+            "'/usr/lib/postgresql/17/bin/pg_dump' }}", workflow
+        )
+        self.assertNotIn("apt-get install", workflow)
 
     def test_synthetic_full_encrypted_upload_and_readback(self):
         # Entire exercise uses fake binaries and fictitious data; no real network
