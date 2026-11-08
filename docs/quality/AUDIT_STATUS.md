@@ -338,3 +338,16 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: sem grant P2 formal para arquivo security/owner-approvals/managed-staging-backup-191.json, sem chave publica GPG e chave privada em custodia independente, sem acesso a bucket privado OCI, sem cliente PostgreSQL 17 no runner e sem backup separado dos 63 objetos Storage; nenhum dump real, restore isolado ou E2E UI 15 dias pode ser certificado. Staging Promote deve permanecer fail-closed e nao se pode marcar APTO.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-08 — #191 owner review of conditional managed Supabase backup scope (no executable grant)
+
+- Base SHA: ab310af5681d9cd4da2b204ca2a7260ed0bf25fa
+- Impacto: a issue #191 exige aprovacao formal para definir escopo da exportacao cifrada do Supabase gerenciado; o banco real e o projeto Docker historico sao distintos, e aprovar texto sem atestar bucket OCI e fingerprint GPG nao pode habilitar exportacao de dados clinicos.
+- Correcao minima: documento em security/owner-approvals/managed-staging-backup-191-review.md exige fonte unica hodbtssikurywwwzdkoy, bucket OCI privado com namespace verificado, GPG publico sob custodia independente, versao 17 de pg_dump, TLS verify-full, lock exclusivo, grant executavel posterior revisado no HEAD, limite de 7 dias e restore isolado. O documento e proposta condicional, NAO e security/owner-approvals/managed-staging-backup-191.json e nao libera escrita ou exportacao.
+- Testes: review routing 7/7 GREEN e suite de governanca basica 28/28 GREEN no run oficial 42481913534; gate AUDIT_LEDGER_DELTA inicialmente RED porque a branch nao tinha este registro. Reexecutar CI oficial no novo HEAD; nenhuma prova de backup gerenciado foi alegada.
+- Evidencias: PR #323 https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/323, review APPROVED inicialmente emitido por shopvivaliz-human em 2026-11-08T12:51:21Z para HEAD 08119a2eae02bbc2fee48cbb086c0c356f001494; commit posterior de ledger exige nova revisao valida do HEAD antes de merge. Nao ha dados clinicos, dump, chave privada nem segredo neste delta.
+- Pendencias: confirmar checks oficiais do HEAD final, receber novo APPROVED se review inicial foi invalidado, integrar pela protecao normal; separadamente atestar parametros OCI/GPG e criar grant executavel com aprovacao P2 especifica, exportar fonte gerenciada, recuperar objetos Storage, testar restore isolado e validar UI no SHA publicado. O gate no_completed_managed_backup permanece ativo.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
