@@ -129,10 +129,13 @@ de todas as condicoes abaixo serem comprovadas:
   `SOLANGE_BACKUP_OCI_NAMESPACE` e `SOLANGE_BACKUP_OCI_BUCKET`; a
   identidade oficial `instance_principal` deve conseguir `bucket get`,
   `object put/get` e verificar retorno. **Nao reutilizar como prova
-  o objeto `solange-staging-latest.dump` do Docker local.** O bucket
-  `shopvivaliz-free-archive` retornou `BucketNotFound` no backend e
-  na Marina nas consultas atuais de 08/11; nao ampliar RBAC ou criar
-  bucket sem grant e custo verificados.
+  o objeto `solange-staging-latest.dump` do Docker local.** A consulta
+  `bucket get` desse OCI bucket retornou `BucketNotFound` nas duas VMs;
+  entretanto, `object head` do artefato MEI existente funcionou no backend
+  (metadata 08/11 04:38Z). Isso comprova apenas acesso a objeto, **nao**
+  a configuracao privada do bucket. Sem atestado `NoPublicAccess` pelo
+  principal com `BUCKET_READ`, a exportacao clinica deve falhar fechado.
+  Nao ampliar IAM nem criar bucket sem grant e custo verificados.
 - **P2:** merge pessoal de `shopvivaliz-human` para
   `security/owner-approvals/managed-staging-backup-191.json`, autorizando
   apenas fonte e bucket exatos com expiracao ate sete dias. So depois, o
