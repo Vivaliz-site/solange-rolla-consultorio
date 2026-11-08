@@ -138,6 +138,7 @@ jobs:
         run: |
           python3 -m unittest discover -s tests -p 'test_staging_*.py' -v
           python3 -m unittest discover -s tests -p 'test_restore_drill_target_guard.py' -v
+          python3 -m unittest discover -s tests -p 'test_backup_docker_integrity_guard.py' -v
 
   architecture:
     needs: impact_scope
