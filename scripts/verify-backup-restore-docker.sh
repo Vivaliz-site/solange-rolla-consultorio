@@ -2,13 +2,13 @@
 set -eu
 : "${BACKUP_FILE:?BACKUP_FILE is required}"
 # A portable local restore is not evidence of hosted Supabase recovery.
-# Never start a Docker restore with a missing, altered or symlinked archive.
+# Never start Docker with a missing, altered or symlinked backup archive.
 fail_archive() { echo "local_restore_refused: $1" >&2; exit 1; }
 [ -f "$BACKUP_FILE" ] && [ -s "$BACKUP_FILE" ] && [ ! -L "$BACKUP_FILE" ] || fail_archive archive_missing_or_unsafe
 CHECKSUM_FILE="$BACKUP_FILE.sha256"
 [ -f "$CHECKSUM_FILE" ] && [ -s "$CHECKSUM_FILE" ] && [ ! -L "$CHECKSUM_FILE" ] || fail_archive checksum_missing_or_unsafe
 EXPECTED=$(awk 'NR==1 {print $1}' "$CHECKSUM_FILE")
-printf '%s\\n' "$EXPECTED" | grep -Eq '^[a-fA-F0-9]{64}
+echo "$EXPECTED" | grep -Eq '^[a-fA-F0-9]{64}NAME=solange-restore-drill-$$
 DIR=$(dirname "$BACKUP_FILE")
 BASE=$(basename "$BACKUP_FILE")
 IMAGE=public.ecr.aws/supabase/postgres:15.8.1.085
@@ -39,8 +39,9 @@ END=$(date +%s)
 echo "restore_success scope=legacy_local_only managed_staging_certified=false rto_seconds=$((END-START))"
  || fail_archive checksum_invalid
 ACTUAL=$(sha256sum "$BACKUP_FILE" | awk '{print $1}')
-[ "$(printf '%s' "$EXPECTED" | tr 'A-F' 'a-f')" = "$ACTUAL" ] || fail_archive checksum_mismatch
-NAME=solange-restore-drill-$
+EXPECTED_LOWER=$(echo "$EXPECTED" | tr 'A-F' 'a-f')
+[ "$EXPECTED_LOWER" = "$ACTUAL" ] || fail_archive checksum_mismatch
+NAME=solange-restore-drill-$$
 DIR=$(dirname "$BACKUP_FILE")
 BASE=$(basename "$BACKUP_FILE")
 IMAGE=public.ecr.aws/supabase/postgres:15.8.1.085
