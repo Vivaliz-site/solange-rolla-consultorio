@@ -90,58 +90,58 @@ reinterpretar checksum local como recuperação do sistema publicado.
 
 ## Exportacao criptografada da fonte Supabase gerenciada (correcao P1 08/11/2026)
 
-A rotina nova \`scripts/backup-managed-staging-offsite.py\` trata **somente o
+A rotina nova `scripts/backup-managed-staging-offsite.py` trata **somente o
 PostgreSQL gerenciado** do staging, nao o container Docker legado. Usa
-\`SUPABASE_STAGING_PROJECT_REF\` + URL HTTPS do runtime e usuario Postgres
+`SUPABASE_STAGING_PROJECT_REF` + URL HTTPS do runtime e usuario Postgres
 associado ao mesmo projeto. Para session pooler, o usuario precisa ser
-\`postgres.<ref>\` e a porta de sessao 5432, nao a porta transaction 6543.
-\`pg_dump\` deve ser da familia **17**, a mesma major do PostgreSQL gerenciado.
+`postgres.<ref>` e a porta de sessao 5432, nao a porta transaction 6543.
+`pg_dump` deve ser da familia **17**, a mesma major do PostgreSQL gerenciado.
 O backend tem cliente 16.15 e **nao deve** ser usado para dump do servidor 17.
 
 O transporte Postgres configura **TLS verify-full e truststore do sistema**;
 senha de banco e outros segredos ficam no environment protegido do job,
 nunca em argumentos, URL, commit, log ou comando mostrado. O pipeline transmite
-as linhas de backup diretamente do \`pg_dump -Fc\` para criptografia **GPG
+as linhas de backup diretamente do `pg_dump -Fc` para criptografia **GPG
 com fingerprint publica fixa**, antes de gravar no disco: nao gera dump
-plaintext intermediario. Usa \`flock\` 0600 por projeto, objeto OCI com nome
-unico (nao sobrescreve \`latest\`) e validacao do SHA-256 apos baixar a
+plaintext intermediario. Usa `flock` 0600 por projeto, objeto OCI com nome
+unico (nao sobrescreve `latest`) e validacao do SHA-256 apos baixar a
 copia cifrada, com manifesto sanitizado. Sem certificado/chave de
 recuperacao independente, nao alegar restore. E proibido importar a chave
 privada para o runner ou registrar passwords/objetos de Storage.
 
-O workflow **ja existente** \`.github/workflows/staging-managed-backup-evidence.yml\`
+O workflow **ja existente** `.github/workflows/staging-managed-backup-evidence.yml`
 continua agendado **apenas para conferir metadados do provedor**, sem escrita.
-Uma chamada manual **explicita** \`workflow_dispatch.mode=offsite_export\`
+Uma chamada manual **explicita** `workflow_dispatch.mode=offsite_export`
 permite acionar uma unica tentativa no **runner existente** somente depois
 de todas as condicoes abaixo serem comprovadas:
 
-- **Fonte:** \`hodbtssikurywwwzdkoy\` (staging ativo, projeto \`sa-east-1\`);
+- **Fonte:** `hodbtssikurywwwzdkoy` (staging ativo, projeto `sa-east-1`);
   o repo, URL runtime e usuario do pooler devem apontar a mesma identidade;
   preservar a referencia de producao separada e inativa.
-- **Ambiente GitHub \`staging\`:** o segredo \`SUPABASE_DB_PASSWORD\`
+- **Ambiente GitHub `staging`:** o segredo `SUPABASE_DB_PASSWORD`
   ja existe por nome, mas precisa validacao do consumidor; configurar
-  \`SUPABASE_MANAGED_DB_HOST\` e \`SUPABASE_MANAGED_DB_USER\` como **vars**,
+  `SUPABASE_MANAGED_DB_HOST` e `SUPABASE_MANAGED_DB_USER` como **vars**,
   nao transportar a senha em URL ou mensagem.
 - **Criptografia:** provisionar e conferir uma chave GPG publica de backup no
-  runner e registrar sua fingerprint em \`SOLANGE_BACKUP_GPG_RECIPIENT\`.
+  runner e registrar sua fingerprint em `SOLANGE_BACKUP_GPG_RECIPIENT`.
   A chave **privada e a prova de recuperabilidade** devem ser mantidas fora da VM.
 - **Destino OCI:** configurar namespace e nome de bucket privado nas vars
-  \`SOLANGE_BACKUP_OCI_NAMESPACE\` e \`SOLANGE_BACKUP_OCI_BUCKET\`; a
-  identidade oficial \`instance_principal\` deve conseguir \`bucket get\`,
-  \`object put/get\` e verificar retorno. **Nao reutilizar como prova
-  o objeto \`solange-staging-latest.dump\` do Docker local.** O bucket
-  \`shopvivaliz-free-archive\` retornou \`BucketNotFound\` no backend e
+  `SOLANGE_BACKUP_OCI_NAMESPACE` e `SOLANGE_BACKUP_OCI_BUCKET`; a
+  identidade oficial `instance_principal` deve conseguir `bucket get`,
+  `object put/get` e verificar retorno. **Nao reutilizar como prova
+  o objeto `solange-staging-latest.dump` do Docker local.** O bucket
+  `shopvivaliz-free-archive` retornou `BucketNotFound` no backend e
   na Marina nas consultas atuais de 08/11; nao ampliar RBAC ou criar
   bucket sem grant e custo verificados.
-- **P2:** merge pessoal de \`shopvivaliz-human\` para
-  \`security/owner-approvals/managed-staging-backup-191.json\`, autorizando
+- **P2:** merge pessoal de `shopvivaliz-human` para
+  `security/owner-approvals/managed-staging-backup-191.json`, autorizando
   apenas fonte e bucket exatos com expiracao ate sete dias. So depois, o
-  owner provisiona o segredo \`SOLANGE_MANAGED_BACKUP_OWNER_GRANT\`
-  com o valor \`scoped-191-v1\` no environment \`staging\`.
+  owner provisiona o segredo `SOLANGE_MANAGED_BACKUP_OWNER_GRANT`
+  com o valor `scoped-191-v1` no environment `staging`.
   Sem os dois gates, a tentativa falha **antes de qualquer dump**.
 - **Estado de liberacao:** a exportacao acima e **DB_ONLY**. Mesmo um
   ciphertext OCI com checksum remoto valido continua
-  \`STORAGE=NOT_VALIDATED RESTORE=NOT_VALIDATED AUDIT_VERDICT=NAO_APTO\`.
+  `STORAGE=NOT_VALIDATED RESTORE=NOT_VALIDATED AUDIT_VERDICT=NAO_APTO`.
   O staging Supabase tem quatro buckets e 63 objetos privados de Storage,
   que exigem copia criptografada separada, inventario reconciliado e
   readback apos restauracao. O gate de promocao atual nao pode ser
