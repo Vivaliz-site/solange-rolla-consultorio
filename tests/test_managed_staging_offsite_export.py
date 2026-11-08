@@ -108,8 +108,7 @@ class ManagedOffsiteContract(unittest.TestCase):
     def test_write_grant_denied_before_any_external_call(self):
         env = good_env()
         with patch.object(backup, "execute_encrypted_export") as export:
-            with self.assertRaises(backup.BackupBlocked):
-                backup.main(["--execute"], env=env)
+            self.assertEqual(backup.main(["--execute"], env=env), 2)
             export.assert_not_called()
 
     def test_real_destination_key_is_unpredictable_and_never_overwrites_latest(self):
