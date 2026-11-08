@@ -74,6 +74,8 @@ def validate_config(env):
         "oci_namespace": namespace,
         "oci_binary": env.get("SOLANGE_OCI_CLI_BIN", DEFAULT_OCI),
         "pg_dump_binary": env.get("SOLANGE_PGDUMP17_BIN", "/usr/lib/postgresql/17/bin/pg_dump"),
+        "tls_ca_file": env.get("SUPABASE_MANAGED_DB_CA_FILE", ""),
+        "tls_ca_sha256": env.get("SUPABASE_MANAGED_DB_CA_SHA256", ""),
     }
 
 
@@ -163,6 +165,34 @@ def _run_command(args, *, env=None, want_stdout=False):
     return result.stdout if want_stdout else b""
 
 
+def require_supabase_ca(cfg):
+    """Pin the Supabase-issued DB CA; system trust does not validate its private chain."""
+    raw = cfg.get("tls_ca_file", "")
+    expected = cfg.get("tls_ca_sha256", "")
+    if not raw or not expected:
+        raise BackupBlocked("database_ca_missing")
+    if not re.fullmatch(r"[a-fA-F0-9]{64}", expected):
+        raise BackupBlocked("database_ca_fingerprint_invalid")
+    path = Path(raw)
+    if not path.is_absolute() or path.is_symlink():
+        raise BackupBlocked("database_ca_unsafe_path")
+    try:
+        st = path.lstat()
+        if not stat.S_ISREG(st.st_mode) or st.st_mode & 0o022:
+            raise BackupBlocked("database_ca_unsafe_permissions")
+        with open(path, "rb") as stream:
+            ca = stream.read(65537)
+    except OSError:
+        raise BackupBlocked("database_ca_unreadable") from None
+    if (len(ca) < 64 or len(ca) > 65536
+            or not ca.startswith(b"-----BEGIN CERTIFICATE-----\n")
+            or b"-----END CERTIFICATE-----" not in ca):
+        raise BackupBlocked("database_ca_invalid")
+    if hashlib.sha256(ca).hexdigest() != expected.lower():
+        raise BackupBlocked("database_ca_digest_mismatch")
+    return str(path)
+
+
 def ensure_preflight(cfg):
     binary = cfg["pg_dump_binary"]
     version = _run_command([binary, "--version"], want_stdout=True).decode("ascii", "replace")
@@ -187,6 +217,7 @@ def ensure_preflight(cfg):
     if any(line.startswith(("sec:", "ssb:", "fpr:"))
            for line in secret_listing.splitlines()):
         raise BackupBlocked("offline_private_key_present_on_runner")
+    require_supabase_ca(cfg)
     oci = cfg["oci_binary"]
     bucket_raw = _run_command([
         oci, "os", "bucket", "get", "--auth", "instance_principal",
@@ -243,7 +274,7 @@ def execute_encrypted_export(cfg, env):
             pg_env = os.environ.copy()
             pg_env["PGPASSWORD"] = env["SUPABASE_DB_PASSWORD"]
             pg_env["PGSSLMODE"] = "verify-full"
-            pg_env["PGSSLROOTCERT"] = "system"
+            pg_env["PGSSLROOTCERT"] = require_supabase_ca(cfg)
             pg_env["PGCONNECT_TIMEOUT"] = "10"
             try:
                 with open(archive, "wb") as output:

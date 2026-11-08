@@ -338,3 +338,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: sem grant P2 formal para arquivo security/owner-approvals/managed-staging-backup-191.json, sem chave publica GPG e chave privada em custodia independente, sem acesso a bucket privado OCI, sem cliente PostgreSQL 17 no runner e sem backup separado dos 63 objetos Storage; nenhum dump real, restore isolado ou E2E UI 15 dias pode ser certificado. Staging Promote deve permanecer fail-closed e nao se pode marcar APTO.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-08 — #191 CA TLS explicita do Supabase para exportacao gerenciada
+
+- Base SHA: ab310af5681d9cd4da2b204ca2a7260ed0bf25fa
+- Impacto: o cliente atual do backend nao tem rota IPv6 para db.hodbtssikurywwwzdkoy.supabase.co:5432. O pooler oficial aws-0-sa-east-1.pooler.supabase.com:5432 respondeu TCP/SSL, mas o teste openssl -starttls postgres apontou self-signed certificate in certificate chain: o uso de PGSSLROOTCERT=system no exportador falharia verify-full na origem correta.
+- Correcao: exigir arquivo local da CA emitida pelo Supabase e seu SHA256 pinado, recusando symlink, alteracao por grupo/outros e mismatch; manter PGSSLMODE=verify-full, conexao de sessao IPv4 5432, verificacoes de tenant, GPG, OCI privado e P2; nao modificar certificacao nem desativar gate.
+- Testes: regressao RED/GREEN sintetica de CA obrigatoria, adulteracao e workflow; incluir suite e CI oficiais antes de promover. Nenhuma credencial ou dado de paciente exposto.
+- Pendencias: CA oficial ainda nao provisionada, pg_dump17 ausente no runner, chave GPG e bucket OCI privado nao certificados, grant P2 de exportacao ainda necessario, Storage e restore isolado nao executados. Estado #191 e #98: NAO_APTO.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
