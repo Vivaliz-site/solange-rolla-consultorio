@@ -77,9 +77,39 @@ def validate_config(env):
     }
 
 
-def require_owner_grant(env):
+def require_owner_grant(env, cfg=None, *, grant_path=None, now=None):
     if env.get("SOLANGE_MANAGED_BACKUP_OWNER_GRANT") != "scoped-191-v1":
         raise BackupBlocked("owner_write_grant_missing")
+    if cfg is None:
+        cfg = validate_config(env)
+    if grant_path is None:
+        grant_path = (Path(__file__).resolve().parents[1] / "security" /
+                      "owner-approvals" / "managed-staging-backup-191.json")
+    path = Path(grant_path)
+    if not path.is_file() or path.is_symlink():
+        raise BackupBlocked("owner_approved_grant_file_missing")
+    def unique_pairs(pairs):
+        result = {}
+        for k, v in pairs:
+            if k in result:
+                raise ValueError("duplicate grant key")
+            result[k] = v
+        return result
+    try:
+        payload = json.loads(path.read_text(), object_pairs_hook=unique_pairs)
+        if not isinstance(payload, dict):
+            raise ValueError()
+        expires = dt.datetime.fromisoformat(payload["expires_at"].replace("Z", "+00:00"))
+    except (ValueError, KeyError, TypeError, OSError):
+        raise BackupBlocked("owner_approved_grant_invalid") from None
+    current = dt.datetime.now(dt.timezone.utc) if now is None else now
+    if (payload.get("approved_by") != "shopvivaliz-human"
+            or payload.get("action") != "managed_staging_db_encrypted_offsite"
+            or payload.get("source_ref") != cfg["source_ref"]
+            or payload.get("oci_bucket") != cfg["oci_bucket"]
+            or payload.get("scope") != BACKUP_SCOPE_VERDICT
+            or expires.tzinfo is None or not current < expires <= current + dt.timedelta(days=7)):
+        raise BackupBlocked("owner_approved_grant_scope_or_expiry_invalid")
 
 
 def pg_dump_major(version):
