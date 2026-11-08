@@ -363,3 +363,15 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: CA oficial ainda nao provisionada, pg_dump17 ausente no runner, chave GPG e bucket OCI privado nao certificados, grant P2 de exportacao ainda necessario, Storage e restore isolado nao executados. Estado #191 e #98: NAO_APTO.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-08 — #191 runner com cliente PostgreSQL 17 isolado sem alterar libpq global
+
+- Base SHA: 9f359c3a2a0966c0aec6e2690056f7308fd2d617
+- Impacto: job manual do backup de staging gerenciado usava o caminho padrao de pg_dump17, ausente no runner ARM64 Ubuntu noble (host backend autorizado), e instalar o pacote PGDG diretamente atualizaria libpq5/libpq-dev globais de 16.15 para 18.6. A correcao limita-se ao binary-path do exportador, sem alterar segredos, grant P2, banco, objetos Storage, staging ou agendamento.
+- Testes: preflight apt-get -s identificou upgrade global e foi abortado; repositorio APT PGDG temporario limpo com readback. Cliente 17.11 extraido dos .deb oficiais assinados em /opt/shopvivaliz/pg-client-17.11, com libpq 18.6 isolada via LD_LIBRARY_PATH no wrapper; pg_dump --version como usuario ubuntu GREEN, ldd sem bibliotecas ausentes, libpq5 dpkg global permanece 16.15 e source PGDG global ausente. Teste de regressao estatico exige variavel SOLANGE_PGDUMP17_BIN no job manual, preservando o fallback para instalacoes tradicionais. CI oficial ainda exige verificacao no HEAD candidato.
+- Evidencias: tarefas MCP 6f395296-e3b8-4706-b1da-5d93af173538 (simulacao) e a3183516-ee6c-4084-af83-558849e0403a (rollback) succeeded/exit0; instalacao isolada 20dc4e56-c681-4eb7-aecc-e814d9e4235b succeeded/exit0, readback ubuntu audit 5657bdce-9c12-4568-807b-ece61f7120c7; binario root:root 0755, 13 MB. Mudancas somente em workflow manual existente, teste e este ledger, sem exportacao real.
+- Pendencias: GitHub Environment staging deve definir SOLANGE_PGDUMP17_BIN para /opt/shopvivaliz/pg-client-17.11/pg_dump; concluir CI, merge protegido e teste de preflight fail-closed. Faltam ainda CA oficial pinada, fingerprint GPG publica e custodia privada offhost, bucket OCI NoPublicAccess e namespace, grant P2 executavel e evidencia externa, exportacao gerenciada, backup Storage, restore isolado e jornadas UI no SHA implantado. NAO declarar recuperacao clinica por pg_dump --version.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
