@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -20,6 +21,7 @@ describe('backup restore drill readiness', () => {
     mkdirSync(bin)
     mkdirSync(state)
     writeFileSync(backup, 'fixture')
+    writeFileSync(`${backup}.sha256`, `${createHash('sha256').update('fixture').digest('hex')}  backup.dump\n`)
 
     const docker = path.join(bin, 'docker')
     writeFileSync(docker, `#!/bin/sh
@@ -83,6 +85,8 @@ exit 99
 
       expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0)
       expect(result.stdout).toContain('restore_success')
+      expect(result.stdout).toContain('scope=legacy_local_only')
+      expect(result.stdout).toContain('managed_staging_certified=false')
 
       const invocations = readFileSync(path.join(state, 'invocations'), 'utf8')
       expect(invocations).toContain('public.ecr.aws/supabase/postgres:15.8.1.085')

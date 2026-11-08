@@ -26,6 +26,8 @@ scripts/verify-backup-restore.sh
 
 O exemplo é documental: não dispara backup nem restore, não prova que o volume, chave ou dados estão disponíveis. A restauração real de staging no Supabase gerenciado **não** foi executada. O verificador Docker separado continua apropriado para o dump portátil em contêiner novo, mas não prova a fonte gerenciada.
 
+**Integridade do exercício portátil (08/11):** o verificador Docker também exige arquivo regular, não-symlink, par `.sha256` regular e checksum idêntico **antes** de chamar o Docker. Evidências positivas são rotuladas `scope=legacy_local_only managed_staging_certified=false`; isso não substitui o backup criptografado off-host da fonte Supabase real, restauração isolada, RLS nem Storage. Os artefatos do scheduler local histórico continuam classificados como `NAO_APTO` para a homologação gerenciada.
+
 
 ## Objetivos
 
