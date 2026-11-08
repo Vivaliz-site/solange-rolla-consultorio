@@ -207,12 +207,14 @@ def execute_encrypted_export(cfg, env):
             pg_env["PGCONNECT_TIMEOUT"] = "10"
             try:
                 with open(archive, "wb") as output:
+                    os.fchmod(output.fileno(), 0o600)
                     dump = subprocess.Popen(
                         make_pg_dump_command(cfg, cfg["pg_dump_binary"]),
                         stdout=subprocess.PIPE,
                         stderr=subprocess.DEVNULL,
                         env=pg_env,
                     )
+                    encrypt = None
                     try:
                         encrypt = subprocess.Popen(
                             ["gpg", "--batch", "--yes", "--trust-model", "always",
@@ -223,10 +225,15 @@ def execute_encrypted_export(cfg, env):
                         )
                         dump.stdout.close()
                         enc_rc = encrypt.wait(timeout=600)
+                        dump_rc = dump.wait(timeout=600)
                     finally:
+                        if encrypt is not None and encrypt.poll() is None:
+                            encrypt.kill()
+                            encrypt.wait(timeout=5)
                         if dump.poll() is None:
-                            dump.wait(timeout=600)
-                    if dump.returncode or enc_rc:
+                            dump.kill()
+                            dump.wait(timeout=5)
+                    if dump_rc or enc_rc:
                         raise BackupBlocked("source_export_or_encryption_failed")
                     output.flush()
                     os.fsync(output.fileno())
