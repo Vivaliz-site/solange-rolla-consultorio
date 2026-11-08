@@ -61,6 +61,10 @@ class LocalRestoreIntegrityTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(self.marker.exists(), result.stderr)
 
+    def test_existing_unit_ci_runs_docker_checksum_regressions(self) -> None:
+        ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text()
+        self.assertIn("test_backup_docker_integrity_guard.py", ci)
+
     def test_valid_checksum_passes_preflight_only(self) -> None:
         (Path(str(self.backup) + ".sha256")).write_text(
             hashlib.sha256(self.backup.read_bytes()).hexdigest() + "  fixture.dump\n"
