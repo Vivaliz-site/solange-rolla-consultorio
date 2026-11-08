@@ -315,3 +315,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: CI oficial HEAD exato, main protected merge, testes pos-merge, ensaio real em banco descartavel e prova de backup da fonte gerenciada + objetos Storage/RLS e jornada UI sintetica. Nao usar esta PR para habilitar escrita clinica nem promover staging.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-08 — Integridade de archive no restore portatil Docker e rotulo de fonte local
+
+- Base SHA: 45c6d81bb3608afe0af56f22dd032411a8e4d88d
+- Impacto: #191 backup/restore e #98 homologacao UI. O exercicio Docker de restauracao portatil iniciava o container sem comparar SHA-256 do arquivo com o manifesto; um dump local adulterado ou sem checksum ainda entrava no fluxo. O sucesso do drill local tinha saida generica capaz de ser confundida com certificado de backup Supabase gerenciado.
+- Testes: RED no HEAD 6b66e9fe51724dfa1963a4ea7be09f68fb7b4462 com 3/4 falhas esperadas em fixtures sinteticas de checksum ausente, divergente e symlink (task MCP 2d5ea323-7e8a-4e02-bb35-6f7cac2fbd10); GREEN no HEAD be96edf91aa21613824c3bac91b4a0d666dee8b8 com 25/25 regressões Python PASS, sh -n PASS, task MCP a47237ee-1628-4c2e-b440-c29f3a459cf8. O teste Vitest de restore foi ajustado para fornecer checksum correto e exigir rotulo de escopo. CI oficial e validacao pos-merge ainda exigidos.
+- Evidencias: scripts/verify-backup-restore-docker.sh checa arquivo e checksum sem symlink antes de docker; tests/test_backup_docker_integrity_guard.py com fake Docker sem acesso clinico; tests/integration/backup-restore-readiness.test.ts preserva exercicio sintentico; docs/operations/BACKUP_RESTORE.md distingue restore local de Supabase. Nenhum dump real ou segredo foi acessado, gerado ou exportado.
+- Pendencias: obter backup logico real do projeto Supabase staging com CA TLS verify-full, cofre criptografado off-host e chave de recuperacao validada e grant efetivo; restaurar isoladamente, conferir Storage/RLS, promover exact-SHA e executar 15 dias sinteticos em UI real antes de declarar recuperacao e homologacao APTO.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
