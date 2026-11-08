@@ -98,7 +98,16 @@ associado ao mesmo projeto. Para session pooler, o usuario precisa ser
 `pg_dump` deve ser da familia **17**, a mesma major do PostgreSQL gerenciado.
 O backend tem cliente 16.15 e **nao deve** ser usado para dump do servidor 17.
 
-O transporte Postgres configura **TLS verify-full e truststore do sistema**;
+O transporte Postgres configura **TLS verify-full com CA emitida pelo Supabase**;
+o truststore do sistema nao deve ser presumido: no pooler real o certificado pode
+encadear ate CA privada. O exportador exige um arquivo de certificado regular,
+sem symlink e sem permissao de escrita do grupo/outros, em
+`SUPABASE_MANAGED_DB_CA_FILE`, e verifica seu SHA-256 contra
+`SUPABASE_MANAGED_DB_CA_SHA256` antes de acessar o banco. Obter a CA no
+painel oficial Supabase (Database Settings > SSL Configuration), armazenar
+localmente com autorizacao e validar o pin no environment `staging` via
+vars. Nunca usar `sslmode=require` como substituto de verify-full.
+Referencia: https://supabase.com/docs/guides/database/psql
 senha de banco e outros segredos ficam no environment protegido do job,
 nunca em argumentos, URL, commit, log ou comando mostrado. O pipeline transmite
 as linhas de backup diretamente do `pg_dump -Fc` para criptografia **GPG
@@ -122,6 +131,7 @@ de todas as condicoes abaixo serem comprovadas:
   ja existe por nome, mas precisa validacao do consumidor; configurar
   `SUPABASE_MANAGED_DB_HOST` e `SUPABASE_MANAGED_DB_USER` como **vars**,
   nao transportar a senha em URL ou mensagem.
+- **TLS do projeto:** provisionar o arquivo da CA oficial do Supabase no runner e configurar as vars `SUPABASE_MANAGED_DB_CA_FILE` e `SUPABASE_MANAGED_DB_CA_SHA256` apos confirmar a cadeia; nao alterar a CA do host global nem desabilitar verify-full.
 - **Criptografia:** provisionar e conferir uma chave GPG publica de backup no
   runner e registrar sua fingerprint em `SOLANGE_BACKUP_GPG_RECIPIENT`.
   O preflight consulta `gpg --list-secret-keys` e falha fechado caso a

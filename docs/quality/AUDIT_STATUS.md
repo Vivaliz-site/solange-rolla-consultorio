@@ -351,3 +351,15 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: confirmar checks oficiais do HEAD final, receber novo APPROVED se review inicial foi invalidado, integrar pela protecao normal; separadamente atestar parametros OCI/GPG e criar grant executavel com aprovacao P2 especifica, exportar fonte gerenciada, recuperar objetos Storage, testar restore isolado e validar UI no SHA publicado. O gate no_completed_managed_backup permanece ativo.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-08 — #191 CA TLS explicita do Supabase para exportacao gerenciada
+
+- Base SHA: 2b90fc1de3968cebcc5efacb8e40748df45185c8
+- Impacto: o cliente atual do backend nao tem rota IPv6 para db.hodbtssikurywwwzdkoy.supabase.co:5432. O pooler oficial aws-0-sa-east-1.pooler.supabase.com:5432 respondeu TCP/SSL, mas o teste openssl -starttls postgres apontou self-signed certificate in certificate chain: o uso de PGSSLROOTCERT=system no exportador falharia verify-full na origem correta.
+- Correcao: exigir arquivo local da CA emitida pelo Supabase e seu SHA256 pinado, recusando symlink, alteracao por grupo/outros e mismatch; manter PGSSLMODE=verify-full, conexao de sessao IPv4 5432, verificacoes de tenant, GPG, OCI privado e P2; nao modificar certificacao nem desativar gate.
+- Testes: regressao RED/GREEN sintetica de CA obrigatoria, adulteracao e workflow; incluir suite e CI oficiais antes de promover. Nenhuma credencial ou dado de paciente exposto.
+- Evidencias: CI oficial da PR #324 no HEAD 9377deafca666adb2ac930170958fec697d76fc2 teve Database, CI, Absolute Audit e AI Conflict Resolver success, mas governance-gate 42482350164 FAIL por campo Evidencias ausente neste delta. Regressao local reportada na issue #191: RED 2 errors/2 failures; GREEN 20/20 testes focais, 60/60 backup e 28/28 ledger, py_compile e git diff --check, sem acesso a pacientes. Esta entrada repara o contrato documental; nova CI obrigatoria no HEAD atualizado, e nenhum backup ou restore gerenciado e declarado.
+- Pendencias: CA oficial ainda nao provisionada, pg_dump17 ausente no runner, chave GPG e bucket OCI privado nao certificados, grant P2 de exportacao ainda necessario, Storage e restore isolado nao executados. Estado #191 e #98: NAO_APTO.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->

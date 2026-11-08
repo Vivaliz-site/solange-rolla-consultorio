@@ -8,6 +8,7 @@ import importlib.util
 import os
 import subprocess
 import json
+import hashlib
 import shutil
 import datetime as dt
 from pathlib import Path
@@ -86,6 +87,33 @@ class ManagedOffsiteContract(unittest.TestCase):
         with self.assertRaisesRegex(backup.BackupBlocked, "pg_dump_major_mismatch"):
             backup.require_pg17("pg_dump (PostgreSQL) 16.15 (Ubuntu 16.15)")
         backup.require_pg17("pg_dump (PostgreSQL) 17.6")
+
+    def test_managed_tls_must_have_explicit_ca_file(self):
+        cfg = backup.validate_config(good_env())
+        with self.assertRaisesRegex(backup.BackupBlocked, "database_ca_missing"):
+            backup.require_supabase_ca(cfg)
+
+    def test_managed_tls_ca_digest_prevents_tamper(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "ca.crt"
+            p.write_text("-----BEGIN CERTIFICATE-----\n" + "A" * 120 + "\n-----END CERTIFICATE-----\n")
+            p.chmod(0o600)
+            env = good_env()
+            env["SUPABASE_MANAGED_DB_CA_FILE"] = str(p)
+            env["SUPABASE_MANAGED_DB_CA_SHA256"] = hashlib.sha256(p.read_bytes()).hexdigest()
+            cfg = backup.validate_config(env)
+            self.assertEqual(backup.require_supabase_ca(cfg), str(p))
+            p.write_text("-----BEGIN CERTIFICATE-----\n" + "B" * 120 + "\n-----END CERTIFICATE-----\n")
+            with self.assertRaisesRegex(backup.BackupBlocked, "database_ca_digest_mismatch"):
+                backup.require_supabase_ca(cfg)
+
+    def test_managed_tls_never_implicitly_trusts_system(self):
+        self.assertNotIn('pg_env["PGSSLROOTCERT"] = "system"', SCRIPT.read_text())
+
+    def test_offsite_workflow_has_ca_config(self):
+        wf = (ROOT / ".github/workflows/staging-managed-backup-evidence.yml").read_text()
+        self.assertIn("SUPABASE_MANAGED_DB_CA_FILE", wf)
+        self.assertIn("SUPABASE_MANAGED_DB_CA_SHA256", wf)
 
     def test_grant_is_failing_closed(self):
         with self.assertRaisesRegex(backup.BackupBlocked, "owner_write_grant_missing"):
@@ -236,6 +264,11 @@ class ManagedOffsiteContract(unittest.TestCase):
             }))
             e = dict(os.environ)
             e.update(good_env())
+            ca = root / "provider-ca.crt"
+            ca.write_text("-----BEGIN CERTIFICATE-----\n" + "A" * 120 + "\n-----END CERTIFICATE-----\n")
+            ca.chmod(0o600)
+            e["SUPABASE_MANAGED_DB_CA_FILE"] = str(ca)
+            e["SUPABASE_MANAGED_DB_CA_SHA256"] = hashlib.sha256(ca.read_bytes()).hexdigest()
             e.update({
                 "HOME": str(root), "PATH": f"{fakebin}:{e.get('PATH','')}",
                 "SOLANGE_PGDUMP17_BIN": str(pgbin),
