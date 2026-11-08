@@ -69,6 +69,8 @@ jobs:
           SUPABASE_MANAGED_DB_PORT: '5432'
           SUPABASE_MANAGED_DB_CA_FILE: ${{ vars.SUPABASE_MANAGED_DB_CA_FILE }}
           SUPABASE_MANAGED_DB_CA_SHA256: ${{ vars.SUPABASE_MANAGED_DB_CA_SHA256 }}
+          # Isolated PG17 wrapper avoids upgrading the runner's global libpq.
+          SOLANGE_PGDUMP17_BIN: ${{ vars.SOLANGE_PGDUMP17_BIN || '/usr/lib/postgresql/17/bin/pg_dump' }}
           SOLANGE_BACKUP_GPG_RECIPIENT: ${{ vars.SOLANGE_BACKUP_GPG_RECIPIENT }}
           SOLANGE_BACKUP_OCI_NAMESPACE: ${{ vars.SOLANGE_BACKUP_OCI_NAMESPACE }}
           SOLANGE_BACKUP_OCI_BUCKET: ${{ vars.SOLANGE_BACKUP_OCI_BUCKET }}
