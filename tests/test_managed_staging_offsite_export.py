@@ -8,6 +8,8 @@ import importlib.util
 import os
 import subprocess
 import json
+import shutil
+import datetime as dt
 from pathlib import Path
 import tempfile
 import unittest
@@ -90,7 +92,30 @@ class ManagedOffsiteContract(unittest.TestCase):
             backup.require_owner_grant(good_env())
         env = good_env()
         env["SOLANGE_MANAGED_BACKUP_OWNER_GRANT"] = "scoped-191-v1"
-        backup.require_owner_grant(env)
+        with self.assertRaisesRegex(backup.BackupBlocked, "owner_approved_grant_file_missing"):
+            backup.require_owner_grant(env)
+        with tempfile.TemporaryDirectory() as t:
+            path = Path(t) / "grant.json"
+            payload = {
+                "approved_by": "shopvivaliz-human",
+                "action": "managed_staging_db_encrypted_offsite",
+                "source_ref": STAGE,
+                "oci_bucket": env["SOLANGE_BACKUP_OCI_BUCKET"],
+                "scope": backup.BACKUP_SCOPE_VERDICT,
+                "expires_at": "2026-11-09T02:00:00Z",
+            }
+            path.write_text(json.dumps(payload))
+            now = dt.datetime(2026, 11, 8, tzinfo=dt.timezone.utc)
+            backup.require_owner_grant(env, grant_path=path, now=now)
+            payload["source_ref"] = PROD
+            path.write_text(json.dumps(payload))
+            with self.assertRaisesRegex(backup.BackupBlocked, "owner_approved_grant_scope_or_expiry_invalid"):
+                backup.require_owner_grant(env, grant_path=path, now=now)
+            payload["source_ref"] = STAGE
+            payload["expires_at"] = "2026-11-07T02:00:00Z"
+            path.write_text(json.dumps(payload))
+            with self.assertRaisesRegex(backup.BackupBlocked, "owner_approved_grant_scope_or_expiry_invalid"):
+                backup.require_owner_grant(env, grant_path=path, now=now)
 
     def test_private_oci_bucket_mandatory(self):
         backup.require_private_oci_bucket({"public-access-type": "NoPublicAccess"})
@@ -173,6 +198,23 @@ class ManagedOffsiteContract(unittest.TestCase):
             )
             for binary in (pgbin, gpg, cli):
                 binary.chmod(0o700)
+            # A synthetic owner-reviewed file exists ONLY inside this fixture,
+            # never in a real production branch before human approval.
+            sandbox = root / "sandbox"
+            (sandbox / "scripts").mkdir(parents=True)
+            grant_dir = sandbox / "security" / "owner-approvals"
+            grant_dir.mkdir(parents=True)
+            export_script = sandbox / "scripts" / SCRIPT.name
+            shutil.copyfile(SCRIPT, export_script)
+            (grant_dir / "managed-staging-backup-191.json").write_text(json.dumps({
+                "approved_by": "shopvivaliz-human",
+                "action": "managed_staging_db_encrypted_offsite",
+                "source_ref": STAGE,
+                "oci_bucket": "private-clinic-backup",
+                "scope": backup.BACKUP_SCOPE_VERDICT,
+                "expires_at": (dt.datetime.now(dt.timezone.utc) +
+                               dt.timedelta(hours=1)).isoformat(),
+            }))
             e = dict(os.environ)
             e.update(good_env())
             e.update({
@@ -183,7 +225,7 @@ class ManagedOffsiteContract(unittest.TestCase):
                 "FAKE_OCI_ROOT": str(remote),
             })
             result = subprocess.run(
-                ["python3", str(SCRIPT), "--execute"], env=e,
+                ["python3", str(export_script), "--execute"], env=e,
                 capture_output=True, text=True, timeout=10
             )
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -200,7 +242,7 @@ class ManagedOffsiteContract(unittest.TestCase):
             self.assertFalse(list(root.glob("**/*.dump")), "unencrypted dump must never persist")
             e["FAKE_TAMPER"] = "1"
             tampered = subprocess.run(
-                ["python3", str(SCRIPT), "--execute"], env=e,
+                ["python3", str(export_script), "--execute"], env=e,
                 capture_output=True, text=True, timeout=10
             )
             self.assertEqual(tampered.returncode, 2)
