@@ -2,6 +2,15 @@ name: Managed Staging Backup Evidence
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Read provider metadata, or explicitly request a one-time encrypted managed export'
+        type: choice
+        required: true
+        default: provider_metadata
+        options:
+          - provider_metadata
+          - offsite_export
   schedule:
     - cron: '29 4 * * *'
 
@@ -14,7 +23,7 @@ concurrency:
 
 jobs:
   verify-provider-backups:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || inputs.mode != 'offsite_export')
     runs-on: [self-hosted, Linux, ARM64, solange-ci, solange-staging-host]
     environment: staging
     timeout-minutes: 12
@@ -36,3 +45,37 @@ jobs:
         if: success()
         run: |
           echo 'Provider backup metadata is available; recovery, Storage, encryption custody, and restore drill remain NOT_VALIDATED.'
+
+  # Manual-only branch of the EXISTING workflow on the SAME self-hosted runner.
+  # Scheduled metadata reads can never export patient data.
+  export-managed-staging-encrypted:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.mode == 'offsite_export'
+    runs-on: [self-hosted, Linux, ARM64, solange-ci, solange-staging-host]
+    environment: staging
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Require owner-scoped grant, exact managed source, PG17, offline key, private OCI bucket
+        env:
+          SUPABASE_STAGING_PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+          SUPABASE_PRODUCTION_PROJECT_REF: ${{ secrets.SUPABASE_PRODUCTION_PROJECT_REF }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_MANAGED_DB_HOST: ${{ vars.SUPABASE_MANAGED_DB_HOST }}
+          SUPABASE_MANAGED_DB_USER: ${{ vars.SUPABASE_MANAGED_DB_USER }}
+          SUPABASE_MANAGED_DB_PORT: '5432'
+          SOLANGE_BACKUP_GPG_RECIPIENT: ${{ vars.SOLANGE_BACKUP_GPG_RECIPIENT }}
+          SOLANGE_BACKUP_OCI_NAMESPACE: ${{ vars.SOLANGE_BACKUP_OCI_NAMESPACE }}
+          SOLANGE_BACKUP_OCI_BUCKET: ${{ vars.SOLANGE_BACKUP_OCI_BUCKET }}
+          SOLANGE_MANAGED_BACKUP_OWNER_GRANT: ${{ secrets.SOLANGE_MANAGED_BACKUP_OWNER_GRANT }}
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          python3 scripts/backup-managed-staging-offsite.py --execute
+      - name: Do not confuse database-only ciphertext with full recovery
+        if: success()
+        run: |
+          echo 'Encrypted database artifact uploaded and verified; Storage object bytes, restore, and independent key custody are NOT_VALIDATED.'
