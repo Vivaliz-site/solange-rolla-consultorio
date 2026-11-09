@@ -375,3 +375,15 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: GitHub Environment staging deve definir SOLANGE_PGDUMP17_BIN para /opt/shopvivaliz/pg-client-17.11/pg_dump; concluir CI, merge protegido e teste de preflight fail-closed. Faltam ainda CA oficial pinada, fingerprint GPG publica e custodia privada offhost, bucket OCI NoPublicAccess e namespace, grant P2 executavel e evidencia externa, exportacao gerenciada, backup Storage, restore isolado e jornadas UI no SHA implantado. NAO declarar recuperacao clinica por pg_dump --version.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-09 — #327 Padronizar PRs em portugues brasileiro e revisao dupla apenas para novas restricoes
+
+- Base SHA: 4ba9d7bbb5b6eac7bbca740d319d58e83044222a
+- Impacto: Propagacao da regra transversal da ShopVivaliz em AGENTS.md e CLAUDE.md; PRs comuns de manutencao, documentacao e correcoes tecnicas nao exigem dupla aprovacao apenas por editar arquivos de agentes ou workflows; aprovacao dupla de shopvivaliz-human e fredmourao-ai permanece estritamente obrigatoria apenas quando o diff introduzir, restaurar ou agravar bloqueio ou restricao; todas as comunicacoes de PRs padronizadas em portugues brasileiro.
+- Testes: Suite de governanca basica python3 scripts/check_pr_review_routing.py e python3 -m unittest tests/test_pr_review_routing.py executadas com 7/7 GREEN; validacao de ledger delta python3 scripts/validate-audit-ledger-delta.py executada com sucesso; sem alteracao de codigo de aplicacao ou runtime.
+- Evidencias: PR #327 em https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/327 reapresentada por shopvivaliz-agents-ia[bot] cobrindo AGENTS.md, CLAUDE.md e este ledger; revisoes solicitadas a shopvivaliz-human e fredmourao-ai; sem dados sensiveis ou segredos envolvidos.
+- Pendencias: Conclusao de todos os status checks do CI oficial de solange-rolla-consultorio, revisao de conformidade e merge sem bypass administrativo.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
