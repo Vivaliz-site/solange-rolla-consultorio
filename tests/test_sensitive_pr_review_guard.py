@@ -106,6 +106,13 @@ class OwnerReviewGuard(TestCase):
                 guard.check(REPO, 330, HEAD)
             self.assertEqual(api.call_count, 1)
 
+    def test_workflow_wires_owner_guard_before_merge_candidate(self):
+        content = (MODULE_PATH.parents[1] / ".github/workflows/pr-auto-merge.yml").read_text()
+        call = 'python3 scripts/verify-sensitive-owner-review.py'
+        output = 'echo "pr_number=$pr_number"'
+        self.assertIn(call, content)
+        self.assertLess(content.index(call), content.index(output))
+
 
 if __name__ == "__main__":
     main()
