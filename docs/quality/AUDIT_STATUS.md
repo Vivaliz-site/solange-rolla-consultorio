@@ -435,7 +435,7 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 <!-- AUDIT_DELTA_V1 -->
 ## 2026-11-10 — [GPT] Manual ilustrado com fonte HTML e capturas de demonstracao — PR #335
 
-- Base SHA: e79ff8eaf7edfc9c07380348e547f4a815911da0
+- Base SHA: 235d9526117a93f4df9c33a201da0d149398c039
 - Impacto: Acrescenta em docs/manuais/solange-consultorio-ilustrado-2026-11 uma fonte HTML, manual PDF A4, README e capturas de telas sintéticas de demonstracao. Nao altera rotas de produto, bancos, RBAC, workflows, segredos ou instalacoes. Conteudo e para referencia operacional, e nao certificacao de producao ou autorizacao de uso clinico real.
 - Testes: No HEAD anterior 6e0561f2, os jobs e2e, architecture, build, unit, typecheck, lint, db e self-test tiveram SUCCESS; governance-gate falhou por AUDIT_LEDGER_DELTA=FAIL sem registro. Inclusao deste delta corrige a ausencia documental, sujeita a readback GREEN no novo SHA. O autor declarou PDF de 39 paginas com 30 capturas; esta declaracao nao substitui auditoria independente.
 - Evidencias: PR #335 associada a issue #333, HTML e assets em docs/manuais/solange-consultorio-ilustrado-2026-11; job github.com/Vivaliz-site/solange-rolla-consultorio/actions/runs/42876999961/job/130042839716 demonstra a falha do ledger anterior. O teste E2E da aplicacao nao e evidencia de publicacao ou aprovacao clinica.
