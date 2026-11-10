@@ -37,6 +37,17 @@ class OwnerReviewGuard(TestCase):
                 {"filename": "security/owner-approvals/a.json", "status": status}
             ]))
 
+    def test_rename_away_from_protected_grant_requires_review(self):
+        # GitHub reports the destination in filename and the old protected
+        # location in previous_filename. Never classify that as ordinary.
+        files = [{"status": "renamed", "filename": "docs/old-grant.json",
+                  "previous_filename": "security/owner-approvals/managed-staging-backup-191.json"}]
+        self.assertTrue(guard.needs_owner_approval(files))
+
+    def test_rename_with_missing_previous_filename_fails_closed(self):
+        with self.assertRaises(guard.ReviewVerificationError):
+            guard.needs_owner_approval([{"status": "renamed", "filename": "docs/a.json"}])
+
     def test_empty_or_malformed_file_inventory_fails_closed(self):
         for files in ([], [{"filename": None}], [None]):
             with self.assertRaises(guard.ReviewVerificationError):
