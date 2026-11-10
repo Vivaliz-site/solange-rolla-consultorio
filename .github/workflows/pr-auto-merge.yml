@@ -9,6 +9,8 @@ on:
       - AI Conflict Resolver
       - Preview
     types: [completed]
+  pull_request_review:
+    types: [submitted]
 
 permissions:
   contents: write
@@ -18,20 +20,33 @@ permissions:
   statuses: read
 
 concurrency:
-  group: pr-auto-merge-${{ github.event.workflow_run.head_sha }}
+  group: pr-auto-merge-${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha }}
   cancel-in-progress: true
 
 jobs:
   merge-if-green:
     if: >-
-      github.event.workflow_run.event == 'pull_request' &&
-      (github.event.workflow_run.conclusion == 'success' ||
-       github.event.workflow_run.conclusion == 'skipped')
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.event == 'pull_request' &&
+        (github.event.workflow_run.conclusion == 'success' ||
+         github.event.workflow_run.conclusion == 'skipped')
+      ) ||
+      (
+        github.event_name == 'pull_request_review' &&
+        github.event.review.state == 'approved' &&
+        github.event.review.user.login == 'shopvivaliz-human'
+      )
     runs-on: [self-hosted, Linux, ARM64, solange-ci]
     timeout-minutes: 30
     outputs:
       main_sha: ${{ steps.revalidate.outputs.sha }}
     steps:
+      # Execute the trusted verifier from main, never PR-controlled code.
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          persist-credentials: false
       - name: Bootstrap verified GitHub CLI
         env:
           GH_VERSION: 2.98.0
@@ -50,7 +65,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha }}
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -123,6 +138,15 @@ jobs:
             exit 0
           fi
 
+          # P0 #191: CODEOWNERS alone was insufficient in PR #329.
+          # Fail closed on protected grants until the GitHub review is real,
+          # current, by the owner, and bound to this exact PR HEAD.
+          # Ordinary technical PRs remain eligible for the current auto-merge.
+          if ! python3 scripts/verify-sensitive-owner-review.py \
+               --repo "$REPO" --pr "$pr_number" --head "$HEAD_SHA"; then
+            echo 'Owner grant is not authorized for this exact HEAD; merge skipped.'
+            exit 0
+          fi
           echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"
 
       - name: Merge validated PR
@@ -131,7 +155,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha }}
         shell: bash
         run: |
           set -Eeuo pipefail
