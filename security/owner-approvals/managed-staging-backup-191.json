@@ -1,0 +1,9 @@
+{
+  "action": "managed_staging_db_encrypted_offsite",
+  "approved_by": "shopvivaliz-human",
+  "source_ref": "hodbtssikurywwwzdkoy",
+  "oci_bucket": "shopvivaliz-free-archive",
+  "gpg_fpr": "6721EA1A15AA0610FD895C1DE865EA82D3A25244",
+  "scope": "DB_ONLY_STORAGE_NOT_BACKED_UP",
+  "expires_at": "2026-11-15T23:59:00Z"
+}
