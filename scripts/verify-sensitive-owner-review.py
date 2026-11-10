@@ -51,7 +51,16 @@ def needs_owner_approval(files: list[dict]) -> bool:
     for entry in files:
         if not isinstance(entry, dict) or not isinstance(entry.get("filename"), str):
             raise ReviewVerificationError("github_pr_file_path_missing")
-    return any(entry["filename"].lstrip("/").startswith(SENSITIVE_PREFIX) for entry in files)
+        # GitHub reports only the destination in filename for renamed files.
+        # A grant renamed OUT of the protected directory must remain protected.
+        if entry.get("status") == "renamed" and not isinstance(entry.get("previous_filename"), str):
+            raise ReviewVerificationError("github_pr_previous_file_path_missing")
+    return any(
+        entry["filename"].lstrip("/").startswith(SENSITIVE_PREFIX) or
+        (entry.get("status") == "renamed" and
+         entry["previous_filename"].lstrip("/").startswith(SENSITIVE_PREFIX))
+        for entry in files
+    )
 
 
 def valid_exact_owner_review(reviews: list[dict], head_sha: str) -> bool:
