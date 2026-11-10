@@ -420,3 +420,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: Verificações oficiais de PR no novo HEAD, aprovações que o GitHub exigir e merge sem bypass. Não altera veredito clínico nem certifica staging/produção.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-10 — [GPT] Manual operacional ilustrado do Consultorio Solange Rolla — PR #336
+
+- Base SHA: e79ff8eaf7edfc9c07380348e547f4a815911da0
+- Impacto: Acrescenta docs/manual/README.md, .gitattributes para PDF e Manual_Operacional_Ilustrado_Solange_Consultorio.pdf (32 paginas descritas na PR), sem edicao de codigo executavel, RBAC, infraestrutura, secrets ou dados clinicos. Material documental produzido com capturas de ambiente de demonstracao e etiquetas candidatas, nao comprova homologacao publicada.
+- Testes: Nos checks oficiais do HEAD anterior cc6b2637, e2e, lint, typecheck, unit, build, architecture, db e self-test tiveram SUCCESS; o governance-gate falhou exclusivamente por AUDIT_LEDGER_DELTA=FAIL sem este registro. Este commit inclui o delta faltante, mas a validacao GREEN deve ser confirmada no novo HEAD; nao atribuir certificacao de UI ou producao a testes de CI.
+- Evidencias: PR #336 e issue #334; arquivos docs/manual/README.md e PDF binario adicionados; check de governanca anterior github.com/Vivaliz-site/solange-rolla-consultorio/actions/runs/42877641731/job/130045117435 documenta causa raiz. As 32 paginas, 28 imagens e verificação PDF constam do relato do autor, nao de auditoria independente deste registro.
+- Pendencias: Revalidar governance-gate e checks no HEAD deste delta, conferir qualidade visual e privacidade do PDF, conciliar manuais #335 e #336 sem perda de informacao, nao liberar dados reais antes dos gates gerais de GO-LIVE do Consultorio.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
