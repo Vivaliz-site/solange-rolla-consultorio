@@ -387,3 +387,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: Conclusao de todos os status checks do CI oficial de solange-rolla-consultorio, revisao de conformidade e merge sem bypass administrativo.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-10 — [GPT] Preflight GPG do backup gerenciado Solange
+
+- Base SHA: dafa95bb03380e67bf33dedd0fc023591181ddef
+- Impacto: O preflight bloqueava indevidamente o runner sem chave privada porque a consulta GPG filtrada pelo fingerprint retorna exit 2 quando a chave secreta está corretamente ausente; a correção preserva a separação entre chave pública no executor e chave privada na VM de custódia.
+- Testes: RED reproduzido no runner (consulta filtrada exit 2; inventário completo sem chaves exit 0); após a correção, 23 testes unitários do contrato passaram, compilação Python passou, verificação de whitespace passou e o canário sintético de criptografia/descriptografia entre as duas VMs conferiu o SHA-256.
+- Evidencias: PR #328; fingerprint GPG 6721EA1A15AA0610FD895C1DE865EA82D3A25244; chave pública importada no keyring do usuário ubuntu do runner; readback confirmou ausência da chave privada correspondente no runner; custódia privada em marina-a1-4c24g sob solange-gpg.
+- Pendencias: CI oficial da PR ainda precisa concluir; backup real continua bloqueado pelo grant P2, CA oficial Supabase com SHA-256, permissão read buckets do principal da VM e adaptador de restore; a chave de custódia ainda não possui escrow independente contra perda total da Marina.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->

@@ -212,11 +212,19 @@ def ensure_preflight(cfg):
     # on the export runner. This is a fail-closed preflight before DB access.
     secret_listing = _run_command(
         ["gpg", "--batch", "--with-colons", "--fingerprint",
-         "--list-secret-keys", cfg["gpg_fpr"]], want_stdout=True,
+         "--list-secret-keys"], want_stdout=True,
     ).decode("utf8", "replace")
-    if any(line.startswith(("sec:", "ssb:", "fpr:"))
-           for line in secret_listing.splitlines()):
+    secret_lines = secret_listing.splitlines()
+    secret_fingerprints = {
+        line.split(":")[9].upper()
+        for line in secret_lines
+        if line.startswith("fpr:") and len(line.split(":")) > 9
+    }
+    if cfg["gpg_fpr"] in secret_fingerprints:
         raise BackupBlocked("offline_private_key_present_on_runner")
+    if (any(line.startswith(("sec:", "ssb:")) for line in secret_lines)
+            and not secret_fingerprints):
+        raise BackupBlocked("offline_private_key_inventory_unreadable")
     require_supabase_ca(cfg)
     oci = cfg["oci_binary"]
     bucket_raw = _run_command([

@@ -161,6 +161,54 @@ class ManagedOffsiteContract(unittest.TestCase):
             with self.assertRaisesRegex(backup.BackupBlocked, "offline_private_key_present_on_runner"):
                 backup.ensure_preflight(cfg)
             self.assertEqual(run.call_count, 3, "must block before private OCI lookup or DB access")
+            secret_command = run.call_args_list[2].args[0]
+            self.assertEqual(secret_command[-1], "--list-secret-keys")
+            self.assertNotIn(FINGERPRINT, secret_command)
+
+    def test_runner_without_recipient_private_key_passes_preflight(self):
+        cfg = backup.validate_config(good_env())
+        bucket = json.dumps({"data": {"public-access-type": "NoPublicAccess"}}).encode()
+        with patch.object(backup, "_run_command", side_effect=[
+            b"pg_dump (PostgreSQL) 17.6\n",
+            f"fpr:::::::::{FINGERPRINT}:\n".encode(),
+            b"",
+            bucket,
+        ]) as run:
+            with patch.object(backup, "require_supabase_ca", return_value="/tmp/provider-ca.crt"):
+                self.assertEqual(backup.ensure_preflight(cfg), cfg)
+        self.assertEqual(run.call_count, 4)
+        secret_command = run.call_args_list[2].args[0]
+        self.assertEqual(secret_command[-1], "--list-secret-keys")
+        self.assertNotIn(FINGERPRINT, secret_command)
+
+    def test_unrelated_runner_private_key_does_not_block_recipient_preflight(self):
+        cfg = backup.validate_config(good_env())
+        unrelated_fingerprint = "A" * 40
+        secret_listing = (
+            "sec:u:2048:1:BBBB:0:0::::::\n"
+            f"fpr:::::::::{unrelated_fingerprint}:\n"
+        ).encode()
+        bucket = json.dumps({"data": {"public-access-type": "NoPublicAccess"}}).encode()
+        with patch.object(backup, "_run_command", side_effect=[
+            b"pg_dump (PostgreSQL) 17.6\n",
+            f"fpr:::::::::{FINGERPRINT}:\n".encode(),
+            secret_listing,
+            bucket,
+        ]) as run:
+            with patch.object(backup, "require_supabase_ca", return_value="/tmp/provider-ca.crt"):
+                self.assertEqual(backup.ensure_preflight(cfg), cfg)
+        self.assertEqual(run.call_count, 4)
+
+    def test_malformed_runner_secret_key_inventory_fails_closed(self):
+        cfg = backup.validate_config(good_env())
+        with patch.object(backup, "_run_command", side_effect=[
+            b"pg_dump (PostgreSQL) 17.6\n",
+            f"fpr:::::::::{FINGERPRINT}:\n".encode(),
+            b"sec:u:2048:1:CCCC:0:0::::::\n",
+        ]) as run:
+            with self.assertRaisesRegex(backup.BackupBlocked, "offline_private_key_inventory_unreadable"):
+                backup.ensure_preflight(cfg)
+        self.assertEqual(run.call_count, 3, "malformed inventory must block before OCI lookup")
 
     def test_private_oci_bucket_mandatory(self):
         backup.require_private_oci_bucket({"public-access-type": "NoPublicAccess"})
