@@ -416,7 +416,7 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Base SHA: af8e55cc940311172f7078b85bc81e5ba770d972
 - Impacto: Atualização documental de AGENTS.md, CLAUDE.md e GEMINI.md para substituir a antiga regra de dupla aprovação de 08/11/2026 pela determinação do proprietário de 10/11/2026. Nenhum agente poderá introduzir ou agravar bloqueios, gates ou restrições, inclusive por PR ou governança; deverá fornecer comandos para execução pessoal do proprietário. A aplicação inicial excepcional foi solicitada expressamente ao GPT nesta conversa. Sem alteração de código clínico, dados, permissões, workflows, infraestrutura ou controles existentes.
 - Testes: Leitura e comparação dos três arquivos propostos com a norma canônica; governança do CI anterior nesta PR informou 7/7 testes de roteamento e 28/28 testes auxiliares PASS, mas AUDIT_LEDGER_DELTA=FAIL porque este registro estava ausente. Após incluir o delta, exigir novo run oficial GREEN no HEAD final; não alegar certificação UI/runtime.
-- Evidências: PR #330 https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/330; falha reproduzida no run 42864853792 (governance-gate) por ausência do delta; correção neste commit documental.
-- Pendências: Verificações oficiais de PR no novo HEAD, aprovações que o GitHub exigir e merge sem bypass. Não altera veredito clínico nem certifica staging/produção.
+- Evidencias: PR #330 https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/330; falha reproduzida no run 42864853792 (governance-gate) por ausência do delta; correção neste commit documental.
+- Pendencias: Verificações oficiais de PR no novo HEAD, aprovações que o GitHub exigir e merge sem bypass. Não altera veredito clínico nem certifica staging/produção.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
