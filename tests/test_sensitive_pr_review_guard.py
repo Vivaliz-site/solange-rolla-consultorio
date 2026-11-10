@@ -33,9 +33,10 @@ class OwnerReviewGuard(TestCase):
 
     def test_grant_add_modify_or_remove_requires_review(self):
         for status in ("added", "modified", "removed", "renamed"):
-            self.assertTrue(guard.needs_owner_approval([
-                {"filename": "security/owner-approvals/a.json", "status": status}
-            ]))
+            entry = {"filename": "security/owner-approvals/a.json", "status": status}
+            if status == "renamed":
+                entry["previous_filename"] = "docs/legacy-grant.json"
+            self.assertTrue(guard.needs_owner_approval([entry]))
 
     def test_rename_away_from_protected_grant_requires_review(self):
         # GitHub reports the destination in filename and the old protected
