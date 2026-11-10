@@ -409,3 +409,36 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: Revisao humana APPROVED no HEAD final e gates oficiais, permissao efetiva do runner OCI para bucket get NoPublicAccess, CA oficial Supabase e seu SHA256, secret do grant apos aprovacao, lease e readback, dump cifrado manual e restore isolado do banco gerenciado; Storage e 15 dias de interface real permanecem sem certificacao. Nenhuma mudanca em IAM, banco, paciente, worker, timer ou producao e autorizada por este registro.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-10 — [GPT] Exclusividade do proprietário na criação de restrições (PR #330)
+
+- Base SHA: af8e55cc940311172f7078b85bc81e5ba770d972
+- Impacto: Atualização documental de AGENTS.md, CLAUDE.md e GEMINI.md para substituir a antiga regra de dupla aprovação de 08/11/2026 pela determinação do proprietário de 10/11/2026. Nenhum agente poderá introduzir ou agravar bloqueios, gates ou restrições, inclusive por PR ou governança; deverá fornecer comandos para execução pessoal do proprietário. A aplicação inicial excepcional foi solicitada expressamente ao GPT nesta conversa. Sem alteração de código clínico, dados, permissões, workflows, infraestrutura ou controles existentes.
+- Testes: Leitura e comparação dos três arquivos propostos com a norma canônica; governança do CI anterior nesta PR informou 7/7 testes de roteamento e 28/28 testes auxiliares PASS, mas AUDIT_LEDGER_DELTA=FAIL porque este registro estava ausente. Após incluir o delta, exigir novo run oficial GREEN no HEAD final; não alegar certificação UI/runtime.
+- Evidencias: PR #330 https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/330; falha reproduzida no run 42864853792 (governance-gate) por ausência do delta; correção neste commit documental.
+- Pendencias: Verificações oficiais de PR no novo HEAD, aprovações que o GitHub exigir e merge sem bypass. Não altera veredito clínico nem certifica staging/produção.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-10 — [GPT] Manual operacional ilustrado do Consultorio Solange Rolla — PR #336
+
+- Base SHA: e79ff8eaf7edfc9c07380348e547f4a815911da0
+- Impacto: Acrescenta docs/manual/README.md, .gitattributes para PDF e Manual_Operacional_Ilustrado_Solange_Consultorio.pdf (32 paginas descritas na PR), sem edicao de codigo executavel, RBAC, infraestrutura, secrets ou dados clinicos. Material documental produzido com capturas de ambiente de demonstracao e etiquetas candidatas, nao comprova homologacao publicada.
+- Testes: Nos checks oficiais do HEAD anterior cc6b2637, e2e, lint, typecheck, unit, build, architecture, db e self-test tiveram SUCCESS; o governance-gate falhou exclusivamente por AUDIT_LEDGER_DELTA=FAIL sem este registro. Este commit inclui o delta faltante, mas a validacao GREEN deve ser confirmada no novo HEAD; nao atribuir certificacao de UI ou producao a testes de CI.
+- Evidencias: PR #336 e issue #334; arquivos docs/manual/README.md e PDF binario adicionados; check de governanca anterior github.com/Vivaliz-site/solange-rolla-consultorio/actions/runs/42877641731/job/130045117435 documenta causa raiz. As 32 paginas, 28 imagens e verificação PDF constam do relato do autor, nao de auditoria independente deste registro.
+- Pendencias: Revalidar governance-gate e checks no HEAD deste delta, conferir qualidade visual e privacidade do PDF, conciliar manuais #335 e #336 sem perda de informacao, nao liberar dados reais antes dos gates gerais de GO-LIVE do Consultorio.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-10 — [GPT] Integracao das etiquetas Link 9027 — PR #332
+
+- Base SHA: 235d9526117a93f4df9c33a201da0d149398c039
+- Impacto: Inclusao de oito arquivos do modulo de etiquetas A4 Link 9027 e um item na navegacao existente, com rota sob papeis e permissao events.read ja implementados no aplicativo. Nao modifica politicas globais, regras de restricao, workflows, roles, bases clinicas, segredos ou infraestrutura.
+- Testes: HEAD anterior 996b72c62f228da3368770d7d8182eb2e732b5a5 teve unit, build, lint, architecture, typecheck, e2e e db GREEN. O governance-gate falhou por AUDIT_LEDGER_DELTA ausente no run 42869965133/job/130018275238. A nova reconciliacao do main e o delta exigem verificacao em CI no novo HEAD; a UI da rota autenticada e a impressao em folha fisica nao estao homologadas.
+- Evidencias: https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/332; issue #331; comentario da PR com teste Chromium isolado e PDF com nomes ficticios; documentos src/modules/labels/README.md e src/modules/labels/application/layout.test.ts.
+- Pendencias: Validar checks oficiais no HEAD corrigido e teste E2E em rota autenticada com sessao autorizada, revisao formal de privacidade/controle de acesso quando aplicavel e calibracao fisica Link 9027. Nao efetuar GO-LIVE nem usar nomes reais ate homologacao.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
