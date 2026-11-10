@@ -120,8 +120,12 @@ class ManagedOffsiteContract(unittest.TestCase):
             backup.require_owner_grant(good_env())
         env = good_env()
         env["SOLANGE_MANAGED_BACKUP_OWNER_GRANT"] = "scoped-191-v1"
-        with self.assertRaisesRegex(backup.BackupBlocked, "owner_approved_grant_file_missing"):
-            backup.require_owner_grant(env)
+        # An unapproved grant file may exist in a PR; force the missing-file
+        # case in an isolated fixture instead of assuming repo-wide absence.
+        with tempfile.TemporaryDirectory() as t:
+            missing = Path(t) / "not-approved.json"
+            with self.assertRaisesRegex(backup.BackupBlocked, "owner_approved_grant_file_missing"):
+                backup.require_owner_grant(env, grant_path=missing)
         with tempfile.TemporaryDirectory() as t:
             path = Path(t) / "grant.json"
             payload = {
