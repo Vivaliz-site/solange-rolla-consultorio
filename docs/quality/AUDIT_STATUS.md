@@ -398,3 +398,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: CI oficial da PR ainda precisa concluir; backup real continua bloqueado pelo grant P2, CA oficial Supabase com SHA-256, permissão read buckets do principal da VM e adaptador de restore; a chave de custódia ainda não possui escrow independente contra perda total da Marina.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-10 — [GPT] Concessão P2 restrita para backup cifrado do Supabase staging (#191)
+
+- Base SHA: 37b27caf1f9036c473e6561e7c2b9fad2100b798
+- Impacto: A fonte real da homologacao e o Supabase gerenciado hodbtssikurywwwzdkoy, que nao tem backup diario gerenciado no plano Free. A branch da PR #329 prepara exclusivamente o JSON de escopo para autorizar uma exportacao cifrada unica ao bucket privado escolhido pelo proprietario; nenhuma permissao foi ativada por criar o arquivo e nenhuma operacao clinica foi executada.
+- Testes: O preflight comparou CODEOWNERS e o contrato require_owner_grant no main ao JSON proposto: action managed_staging_db_encrypted_offsite, ref staging exato, bucket shopvivaliz-free-archive, GPG publico 6721EA1A15AA0610FD895C1DE865EA82D3A25244, escopo DB_ONLY_STORAGE_NOT_BACKED_UP e expiracao 2026-11-15T23:59:00Z inferior a 7 dias. O CI oficial da PR #329 registrou RED governance-gate por ausencia deste proprio delta; conferir GREEN e demais checks no novo HEAD, sem considerar a mera edicao um PASS.
+- Evidencias: PR #329 com HEAD inicial 40f9d34e55a1c1a335045459a96d91fbc7d2d736; run de governanca 42770333242 falhou de forma legitima em AUDIT_LEDGER_DELTA=FAIL e possui prova no job 129676371236; issue #191 comentarios 6756469247, 6756778058 e 6757820011 documentam chave privada fora do runner, plano Free, destino e configuracao validada. Revisao foi solicitada somente a shopvivaliz-human, nao foi obtido APPROVED, nem realizado merge ou exportacao.
+- Pendencias: Revisao humana APPROVED no HEAD final e gates oficiais, permissao efetiva do runner OCI para bucket get NoPublicAccess, CA oficial Supabase e seu SHA256, secret do grant apos aprovacao, lease e readback, dump cifrado manual e restore isolado do banco gerenciado; Storage e 15 dias de interface real permanecem sem certificacao. Nenhuma mudanca em IAM, banco, paciente, worker, timer ou producao e autorizada por este registro.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
