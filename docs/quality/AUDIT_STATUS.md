@@ -453,3 +453,15 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: Validar checks oficiais no HEAD corrigido e teste E2E em rota autenticada com sessao autorizada, revisao formal de privacidade/controle de acesso quando aplicavel e calibracao fisica Link 9027. Nao efetuar GO-LIVE nem usar nomes reais ate homologacao.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-11 — [GPT] Substituição de referências operacionais legadas por MCP — PR #337
+
+- Base SHA: 63eb283c54d7ea459780cfff3dd8a74640b8fd09
+- Impacto: Atualização documental em AGENTS.md para orientar ferramentas MCP já publicadas em vez do antigo canal de acesso remoto. Preservados requisitos anteriores de identidade, segurança, pacientes sintéticos, políticas comerciais, leases/fencing e aprovações; não foram alterados código clínico, workflows, dados, serviços, autenticação nem gates de governança.
+- Testes: PR #337 no HEAD ef5ec09a35febb3d275227674cc899baa06f3667 confirmou 7/7 testes de roteamento e 28/28 testes auxiliares GREEN, mas governance-gate RED exclusivamente por ausência de AUDIT_LEDGER_DELTA; este registro preenche a exigência, sujeito a execução oficial no novo HEAD.
+- Evidencias: PR https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/337 e log oficial https://github.com/Vivaliz-site/solange-rolla-consultorio/actions/runs/43056399928/job/130646901258; leitura de documentação canônica no main e comparação operacional de MCP Marina/Fred-Win realizada em 11/11/2026, sem dados clínicos.
+- Pendencias: Validar todos os jobs GitHub no SHA final, integração protegida, verificação pós-merge e eventual E2E de UI clínica em fluxo independente com pacientes sintéticos; esta alteração documental não certifica produção ou backup/restauração.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
