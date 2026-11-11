@@ -442,3 +442,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: Conferir os novos checks no HEAD final, validar privacidade e legibilidade dos prints, harmonizar este manual com a PR #336 sem perder informacoes, e manter ambiente clinico NO-GO ate auditoria oficial de homologacao, backup/restore e UI real.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-10 — [GPT] Integracao das etiquetas Link 9027 — PR #332
+
+- Base SHA: a100ff334c00302e30abcb5812ef2cbb887b1c5d
+- Impacto: Inclusao de oito arquivos do modulo de etiquetas A4 Link 9027 e um item na navegacao existente, com rota sob papeis e permissao events.read ja implementados no aplicativo. Nao modifica politicas globais, regras de restricao, workflows, roles, bases clinicas, segredos ou infraestrutura.
+- Testes: HEAD anterior 996b72c62f228da3368770d7d8182eb2e732b5a5 teve unit, build, lint, architecture, typecheck, e2e e db GREEN. O governance-gate falhou por AUDIT_LEDGER_DELTA ausente no run 42869965133/job/130018275238. A nova reconciliacao do main e o delta exigem verificacao em CI no novo HEAD; a UI da rota autenticada e a impressao em folha fisica nao estao homologadas.
+- Evidencias: https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/332; issue #331; comentario da PR com teste Chromium isolado e PDF com nomes ficticios; documentos src/modules/labels/README.md e src/modules/labels/application/layout.test.ts.
+- Pendencias: Validar checks oficiais no HEAD corrigido e teste E2E em rota autenticada com sessao autorizada, revisao formal de privacidade/controle de acesso quando aplicavel e calibracao fisica Link 9027. Nao efetuar GO-LIVE nem usar nomes reais ate homologacao.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->

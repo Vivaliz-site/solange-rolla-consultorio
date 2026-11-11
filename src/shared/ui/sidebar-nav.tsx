@@ -13,6 +13,7 @@ const items: NavItem[] = [
   { href: '/agenda', label: 'Agenda', permissions: ['appointments.read'] },
   { href: '/formularios', label: 'Formulários', permissions: ['forms.read'] },
   { href: '/eventos', label: 'Eventos', permissions: ['events.read'] },
+  { href: '/etiquetas', label: 'Etiquetas', permissions: ['events.read'] },
   { href: '/financeiro', label: 'Financeiro', permissions: ['finance.read'] },
   { href: '/fiscal', label: 'Fiscal', permissions: ['fiscal.read'] },
   {
