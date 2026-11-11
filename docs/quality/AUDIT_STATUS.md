@@ -431,3 +431,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: Revalidar governance-gate e checks no HEAD deste delta, conferir qualidade visual e privacidade do PDF, conciliar manuais #335 e #336 sem perda de informacao, nao liberar dados reais antes dos gates gerais de GO-LIVE do Consultorio.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-10 — [GPT] Manual ilustrado com fonte HTML e capturas de demonstracao — PR #335
+
+- Base SHA: 235d9526117a93f4df9c33a201da0d149398c039
+- Impacto: Acrescenta em docs/manuais/solange-consultorio-ilustrado-2026-11 uma fonte HTML, manual PDF A4, README e capturas de telas sintéticas de demonstracao. Nao altera rotas de produto, bancos, RBAC, workflows, segredos ou instalacoes. Conteudo e para referencia operacional, e nao certificacao de producao ou autorizacao de uso clinico real.
+- Testes: No HEAD anterior 6e0561f2, os jobs e2e, architecture, build, unit, typecheck, lint, db e self-test tiveram SUCCESS; governance-gate falhou por AUDIT_LEDGER_DELTA=FAIL sem registro. Inclusao deste delta corrige a ausencia documental, sujeita a readback GREEN no novo SHA. O autor declarou PDF de 39 paginas com 30 capturas; esta declaracao nao substitui auditoria independente.
+- Evidencias: PR #335 associada a issue #333, HTML e assets em docs/manuais/solange-consultorio-ilustrado-2026-11; job github.com/Vivaliz-site/solange-rolla-consultorio/actions/runs/42876999961/job/130042839716 demonstra a falha do ledger anterior. O teste E2E da aplicacao nao e evidencia de publicacao ou aprovacao clinica.
+- Pendencias: Conferir os novos checks no HEAD final, validar privacidade e legibilidade dos prints, harmonizar este manual com a PR #336 sem perder informacoes, e manter ambiente clinico NO-GO ate auditoria oficial de homologacao, backup/restore e UI real.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
