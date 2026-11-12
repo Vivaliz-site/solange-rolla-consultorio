@@ -465,3 +465,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: Validar todos os jobs GitHub no SHA final, integração protegida, verificação pós-merge e eventual E2E de UI clínica em fluxo independente com pacientes sintéticos; esta alteração documental não certifica produção ou backup/restauração.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-12 — [GPT] Reconciliação do registro de auditoria documental MCP Marina — PR #338
+
+- Base SHA: c517653ae5e8fb275d99ff73023941c0dbd69bfd
+- Impacto: A PR #338 acrescenta instruções documentais sobre o parâmetro já existente as_user=ubuntu no MCP Marina em AGENTS.md, CLAUDE.md, GEMINI.md e .github/copilot-instructions.md; este registro sana a omissão do delta append-only. Não altera código executável, credenciais, RBAC, regras impeditivas, ambiente clínico ou configurações de produção.
+- Testes: RED comprovado no workflow Repository Governance Gate #43271409599, job #131368607643, com AUDIT_LEDGER_DELTA=FAIL pela ausência de docs/quality/AUDIT_STATUS.md. Após este registro, exigir GREEN no HEAD exato e checks oficiais da PR, sem inferir aprovação ou homologação do staging.
+- Evidencias: PR https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/338; execução oficial https://github.com/Vivaliz-site/solange-rolla-consultorio/actions/runs/43271409599; leitura do diff de quatro arquivos e do ledger anterior no HEAD c476a660abf331fccb655037627a2d4d46011ab6.
+- Pendencias: Validar o governance-gate e os demais checks no novo commit, integrar apenas pelo mecanismo GitHub permitido e conferir o main. A homologação clínica #98 e o backup/restore da fonte gerenciada #191 continuam independentes e não certificados.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
