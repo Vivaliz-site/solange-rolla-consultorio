@@ -476,3 +476,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: Validar o governance-gate e os demais checks no novo commit, integrar apenas pelo mecanismo GitHub permitido e conferir o main. A homologação clínica #98 e o backup/restore da fonte gerenciada #191 continuam independentes e não certificados.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-12 — [GPT] Proposta de revisão humana da migração Supabase staging para VM Marina — PR #340
+
+- Base SHA: 7fff55e36e6df895c8d8cd614fc3ea6da32145c2
+- Impacto: Acrescenta documento de revisão humana na área security/owner-approvals para a eventual migração de Solange staging Supabase gerenciado para stack isolado na VM Marina. A PR é somente proposta: não cria grant executável, regra impeditiva, alteração de RBAC, exportação, importação, Storage, serviço, banco, credencial ou cutover.
+- Testes: RED no Repository Governance Gate do HEAD c0a163ebacdd180685f028eef308eb3d4ef56cbd, run 43321809889/job 131544096516, exclusivamente por falta de AUDIT_LEDGER_DELTA_V1; 7/7 testes de roteamento e 28/28 testes auxiliares PASS. Este delta exige novo run no HEAD corrigido antes de declarar GREEN.
+- Evidencias: PR https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/340; issue https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/191; workflow oficial https://github.com/Vivaliz-site/solange-rolla-consultorio/actions/runs/43321809889; inventário da fonte ativa e da Marina documentado em #191, sem leitura de conteúdo clínico.
+- Pendencias: Provar checks oficiais no SHA corrigido e a revisão proprietária formal da proposta; emitir grant P2 executável separado somente após avaliação e autorização humana, preparar stack isolado, comprovar cópia íntegra de DB/Auth/Storage e restore, homologar os 15 dias pela UI real no build exato antes de qualquer cutover. Nada neste registro certifica o ambiente publicado.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
