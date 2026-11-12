@@ -359,5 +359,24 @@ class ManagedOffsiteContract(unittest.TestCase):
             self.assertNotIn("synthetic-password-never-log", tampered.stderr)
 
 
+
+class ManagedOffsitePreflightWorkflow(unittest.TestCase):
+    def test_offsite_preflight_is_separate_read_only_mode(self):
+        workflow = (ROOT / ".github/workflows/staging-managed-backup-evidence.yml").read_text()
+        self.assertIn("          - offsite_preflight", workflow)
+        self.assertIn("inputs.mode == 'provider_metadata'", workflow)
+        self.assertIn("  preflight-managed-staging-offsite:", workflow)
+        section = workflow.split("  preflight-managed-staging-offsite:", 1)[1].split(
+            "  export-managed-staging-encrypted:", 1)[0]
+        self.assertIn("inputs.mode == 'offsite_preflight'", section)
+        self.assertIn("python3 scripts/backup-managed-staging-offsite.py --preflight", section)
+        self.assertIn("environment: staging", section)
+        self.assertIn("solange-ci, solange-staging-host", section)
+        self.assertNotIn("--execute", section)
+        self.assertNotIn("SUPABASE_DB_PASSWORD", section)
+        self.assertNotIn("SOLANGE_MANAGED_BACKUP_OWNER_GRANT", section)
+        self.assertIn("DB_EXPORT=NOT_RUN", section)
+
+
 if __name__ == "__main__":
     unittest.main()
