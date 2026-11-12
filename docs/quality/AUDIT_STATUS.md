@@ -476,3 +476,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: Validar o governance-gate e os demais checks no novo commit, integrar apenas pelo mecanismo GitHub permitido e conferir o main. A homologação clínica #98 e o backup/restore da fonte gerenciada #191 continuam independentes e não certificados.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-12 — [GPT] Preflight read-only do backup offsite no Supabase Free (#191)
+
+- Base SHA: 7fff55e36e6df895c8d8cd614fc3ea6da32145c2
+- Impacto: acrescenta a opcao manual offsite_preflight no workflow ja existente de evidencias do staging, com o runner self-hosted existente, sem criar worker persistente. A rotina inspeciona somente identidade de origem, pg_dump PG17, chave publica GPG, CA Supabase pinada e metadados OCI NoPublicAccess; nao injeta senha do banco nem grant de exportacao. A consulta agendada ao provedor segue igual e a exportacao cifrada continua exclusiva da opcao offsite_export. Nao modifica gate de promocao nem libera dados clinicos.
+- Testes: RED antes da correcao: teste novo ManagedOffsitePreflightWorkflow reprovou por ausencia do modo, task MCP 2bb4d7f5-6bc8-42c5-84dd-e7008929dcf7. GREEN no mesmo clone isolado apos edicao: teste direcionado PASS, 24/24 testes de contrato da exportacao gerenciada PASS, git diff --check PASS, task MCP c507e4eb-3a26-4dbd-8221-7183fcc3a0a4. Checks GitHub no novo HEAD ainda obrigatorios.
+- Evidencias: projeto real hodbtssikurywwwzdkoy e organizacao tier_free confirmados pelo conector Supabase; documentacao oficial de 05/11/2026 recomenda export offsite para Free; auditores podem consultar apenas o preflight sem exportar dados, e a saida nao certifica restauração nem quatro buckets/63 objetos.
+- Pendencias: integrar pelos gates tecnicos oficiais, executar o novo preflight somente leitura no runner existente e corrigir os erros de infraestrutura que estiverem dentro da autorizacao atual. A certificacao de exportacao real, backup Storage, custodia externa da chave, restore isolado, autorizacao P2 e paridade exact-SHA do staging permanecem obrigatorias; nao fabricar backup nem confundir preflight com APTO.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
