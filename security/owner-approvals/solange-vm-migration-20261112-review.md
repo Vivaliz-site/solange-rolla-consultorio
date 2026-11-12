@@ -1,59 +1,41 @@
-# Revisão do proprietário — migração do Supabase Solange para VM Marina
+# Parecer técnico: migração do Supabase Solange para a VM Marina
 
-Status: **PROPOSTA PARA REVISÃO HUMANA — NÃO É GRANT EXECUTÁVEL**.
+**Natureza:** análise técnica para decisão do proprietário. Este documento **não cria gate, restrição, obrigação de aprovação ou grant executável**, nem altera políticas existentes.
 
-## Decisão solicitada
+## Pedido registrado
 
-Autorizar uma migração única, faseada e reversível do projeto Supabase **ativo de staging** para um stack Supabase self-hosted na VM `marina-a1-4c24g`, preservando a origem até a certificação do cutover.
+O proprietário solicitou migrar o banco da Solange para uma VM. O destino operacional identificado é `marina-a1-4c24g`, com um stack Supabase self-hosted compatível com as funcionalidades efetivamente utilizadas pela aplicação. A intenção é reduzir a dependência do Supabase gerenciado, preservando os dados e a possibilidade de reversão.
 
-Esta proposta não reativa o projeto Supabase de produção que está INACTIVE e não autoriza alteração de produção clínica.
+## Inventário verificado em 12/11/2026
 
-## Fonte e destino exatos
+- Fonte em uso pelo staging: `solange-rolla-staging`, ref `hodbtssikurywwwzdkoy`, região `sa-east-1`, PostgreSQL `17.6.1.166`.
+- Projeto `solange-rolla-production`, ref `nfwipekzmfoekvhvzaqe`: `INACTIVE` nesta leitura; não corresponde à fonte ativa do staging.
+- Dados do banco staging: aproximadamente 17 MB, 47 tabelas no schema `public` e 2 em `clinical`.
+- Storage: quatro buckets privados, com 30 objetos fiscais e 33 documentos assinados; os outros dois buckets estão vazios.
+- VM Marina: 8 OCPUs, aproximadamente 23 GiB de RAM total e 121 GB livres em disco na leitura.
+- Volume legado `supabase_db_solange-rolla-consultorio`: PostgreSQL 15, aproximadamente 71 MB, utilizado por container de validação parado desde 17/10. Não representa a fonte atual.
 
-- Fonte: projeto Supabase `solange-rolla-staging`, ref `hodbtssikurywwwzdkoy`, região `sa-east-1`, PostgreSQL `17.6.1.166`.
-- Runtime associado: staging atualmente usa a URL do projeto gerenciado acima.
-- Destino: VM `marina-a1-4c24g`, stack Supabase self-hosted isolado, PostgreSQL 17 compatível, novos volumes Docker dedicados e rede privada durante a validação.
-- Projeto `solange-rolla-production`, ref `nfwipekzmfoekvhvzaqe`: **INACTIVE** no inventário de 12/11/2026; excluído deste escopo.
+## Arquitetura técnica proposta
 
-## Escopo de dados e componentes
+- Stack separado na Marina: PostgreSQL 17 compatível, Auth/GoTrue, PostgREST, Storage API, gateway e demais componentes Supabase realmente utilizados, com volumes novos e interface de validação privada.
+- Reconstituir schemas, migrations, extensões, funções, triggers, roles, RLS, dados e filas necessários.
+- Considerar a migração de usuários/identidades e dos fatores MFA compatíveis, com verificação de login e reautenticação no destino.
+- Considerar os quatro buckets e seus objetos, metadados e políticas, com conferência de integridade independente.
+- Configurar URLs, JWT, SMTP, segredos e workers apenas pelos mecanismos operacionais já autorizados, sem colocar credenciais em PR, log ou issue.
 
-- PostgreSQL completo: schemas de aplicação e clinical, migrations, extensões, funções, triggers, policies/RLS, roles e grants necessários.
-- Supabase Auth: usuários, identidades, fatores MFA e configuração necessária. Não copiar sessões/refresh tokens ativos; os usuários precisarão autenticar novamente após o cutover. Preservar fatores MFA verificados se compatíveis e validar login antes da promoção.
-- Supabase Storage: quatro buckets privados, seus metadados/policies e os 63 objetos existentes; transferir bytes e validar SHA-256 de origem/destino.
-- Componentes Supabase usados pelo runtime: PostgREST, GoTrue/Auth, Storage API, Realtime, gateway e demais dependências efetivamente usadas pelo app.
-- Configuração de JWT/keys, SMTP, URLs e secrets: provisionamento novo e seguro na VM; nunca registrar valores em logs, PR ou issues.
-- Aplicação e workers: somente após validação funcional do stack privado e aprovação separada do cutover.
+## Sequência técnica sugerida
 
-## Fases autorizáveis
+1. Preparar stack isolado com volumes novos; preservar o volume legado para comparação histórica.
+2. Produzir cópia consistente da fonte staging e importar no destino de ensaio, preservando a origem.
+3. Comparar migrations, contagens agregadas, RLS, roles, autenticação, buckets e hashes; executar testes sintéticos de API, Auth, Storage e Realtime.
+4. Exercitar cenário de rollback e medir janela, RPO e RTO.
+5. **Risco de defasagem:** enquanto a origem estiver em uso entre a cópia inicial e a troca de endpoint, novas gravações podem ficar ausentes no destino. Estratégias a avaliar: sincronização incremental com readback final ou janela operacional de gravações suspensas e cópia final consistente.
+6. Após a decisão operacional do proprietário pelos mecanismos já existentes, verificar runtime, workers, interface gráfica e persistência no SHA publicado.
 
-1. Preparação: instalar/configurar o stack isolado na Marina com volumes novos; não tocar no volume legado PG15.
-2. Cópia: exportar a fonte staging e importar no destino por canal cifrado, sem escrita concorrente na origem; incluir Auth e Storage.
-3. Verificação: comparar schema/migrations, contagens agregadas, RLS, roles, MFA, buckets, objetos e hashes; testar API/Auth/Storage/Realtime com dados sintéticos.
-4. Ensaio: provar rollback e estimar janela/RPO/RTO sem alterar o endpoint ativo.
-5. Cutover: somente após aprovação formal específica, atualizar endpoint/segredos do runtime e workers em janela controlada; manter origem intacta e rollback disponível.
-6. Encerramento: somente após E2E gráfico e readback independente, decidir com o proprietário quando desativar o projeto gerenciado.
+## Escopo desta PR e pontos para decisão
 
-## Limites e proibições
+Esta PR contém **somente este parecer**. Não instala componentes, não transfere conteúdos clínicos/pessoais, não altera banco, endpoints, DNS, credenciais, autorização, runtime ou dados em produção. Não constitui permissão operacional por si só.
 
-- Não iniciar, reutilizar ou sobrescrever o volume antigo `supabase_db_solange-rolla-consultorio` (PostgreSQL 15, container de validação parado desde 17/10).
-- Não exportar/importar dados clínicos ou pessoais, Auth ou Storage antes do grant P2 efetivo e lease/ownership confirmados.
-- Não publicar endpoints, abrir portas públicas, alterar DNS, Cloudflare, Vercel, runtime, workers ou credenciais antes de aprovação específica de cutover.
-- Não reativar o projeto `solange-rolla-production` INACTIVE.
-- Não desativar nem apagar a origem gerenciada após a cópia; manter rollback até aceite final.
-- Não criar runner, worker, timer ou automação nova para esta tarefa.
-- Nenhuma compra/upgrade pago está incluído.
+O proprietário poderá avaliar a topologia, a estratégia de sincronização final e os passos de execução. Os controles de acesso, segurança, lease, permissões e aprovações **já vigentes** permanecem definidos em suas fontes próprias; nenhum requisito adicional é instituído por este texto.
 
-## Evidências de preflight (12/11/2026)
-
-- Fonte staging ativa: PostgreSQL 17.6.1.166, banco de aproximadamente 17 MB; 47 tabelas em `public` e 2 em `clinical`.
-- Storage: quatro buckets privados; 30 objetos fiscais, 33 documentos assinados, dois buckets vazios; total 63 objetos.
-- Marina: 8 OCPUs, aproximadamente 23 GiB RAM disponíveis no host, 121 GB livres no disco.
-- Volume legado: PostgreSQL 15, aproximadamente 71 MB, container `marina-supabase-validation` parado desde 17/10/2026. Não é cópia atual nem destino válido.
-- Não existe stack Supabase Solange ativo na Marina nesta leitura.
-- O projeto Supabase production está INACTIVE.
-
-## Aprovação requerida
-
-A revisão de `shopvivaliz-human` deve aprovar **somente a preparação e cópia privada da fonte staging para um destino isolado na Marina**, nos limites acima. A aprovação desta proposta não autoriza cutover, exposição pública, migração do projeto production INACTIVE, nem desligamento da origem. O cutover exige readback de integridade e autorização owner-scoped adicional antes de alterar runtime/DNS/segredos.
-
-Este arquivo é somente uma proposta de revisão; não cria autorização executável. Um grant P2 consumível deverá ser emitido separadamente, com valores exatos, expiração curta e aprovação no HEAD final, após a decisão do proprietário.
+Fontes operacionais: [issue #191](https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/191) e [PR #340](https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/340).

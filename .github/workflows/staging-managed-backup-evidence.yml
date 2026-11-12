@@ -4,12 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Read provider metadata, or explicitly request a one-time encrypted managed export'
+        description: 'Read provider metadata, check offsite prerequisites, or explicitly export once'
         type: choice
         required: true
         default: provider_metadata
         options:
           - provider_metadata
+          - offsite_preflight
           - offsite_export
   schedule:
     - cron: '29 4 * * *'
@@ -23,7 +24,7 @@ concurrency:
 
 jobs:
   verify-provider-backups:
-    if: github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || inputs.mode != 'offsite_export')
+    if: github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || inputs.mode == 'provider_metadata')
     runs-on: [self-hosted, Linux, ARM64, solange-ci, solange-staging-host]
     environment: staging
     timeout-minutes: 12
@@ -46,6 +47,37 @@ jobs:
         run: |
           echo 'Provider backup metadata is available; recovery, Storage, encryption custody, and restore drill remain NOT_VALIDATED.'
 
+  # Read-only, manual-on-demand validation for the existing Free-plan offsite path.
+  # Never exports a database or Storage object; it only checks prerequisites.
+  preflight-managed-staging-offsite:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.mode == 'offsite_preflight'
+    runs-on: [self-hosted, Linux, ARM64, solange-ci, solange-staging-host]
+    environment: staging
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Validate exact managed source, PG17, public GPG key, pinned CA and private OCI bucket
+        env:
+          SUPABASE_STAGING_PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+          SUPABASE_PRODUCTION_PROJECT_REF: ${{ secrets.SUPABASE_PRODUCTION_PROJECT_REF }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_MANAGED_DB_HOST: ${{ vars.SUPABASE_MANAGED_DB_HOST }}
+          SUPABASE_MANAGED_DB_USER: ${{ vars.SUPABASE_MANAGED_DB_USER }}
+          SUPABASE_MANAGED_DB_PORT: '5432'
+          SUPABASE_MANAGED_DB_CA_FILE: ${{ vars.SUPABASE_MANAGED_DB_CA_FILE }}
+          SUPABASE_MANAGED_DB_CA_SHA256: ${{ vars.SUPABASE_MANAGED_DB_CA_SHA256 }}
+          SOLANGE_PGDUMP17_BIN: ${{ vars.SOLANGE_PGDUMP17_BIN || '/usr/lib/postgresql/17/bin/pg_dump' }}
+          SOLANGE_BACKUP_GPG_RECIPIENT: ${{ vars.SOLANGE_BACKUP_GPG_RECIPIENT }}
+          SOLANGE_BACKUP_OCI_NAMESPACE: ${{ vars.SOLANGE_BACKUP_OCI_NAMESPACE }}
+          SOLANGE_BACKUP_OCI_BUCKET: ${{ vars.SOLANGE_BACKUP_OCI_BUCKET }}
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          python3 scripts/backup-managed-staging-offsite.py --preflight
+          echo 'DB_EXPORT=NOT_RUN STORAGE=NOT_VALIDATED RESTORE=NOT_VALIDATED'
   # Manual-only branch of the EXISTING workflow on the SAME self-hosted runner.
   # Scheduled metadata reads can never export patient data.
   export-managed-staging-encrypted:

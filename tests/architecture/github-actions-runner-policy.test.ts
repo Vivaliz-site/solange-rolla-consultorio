@@ -243,7 +243,7 @@ describe('GitHub Actions runner policy', () => {
     const verifier = jobs?.['verify-provider-backups']
     expect(verifier?.['runs-on']).toEqual([...runnerLabels, 'solange-staging-host'])
     expect(verifier?.if).toBe(
-      "github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || inputs.mode != 'offsite_export')",
+      "github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || inputs.mode == 'provider_metadata')",
     )
     expect(verifier?.environment).toBe('staging')
     const exporter = jobs?.['export-managed-staging-encrypted']

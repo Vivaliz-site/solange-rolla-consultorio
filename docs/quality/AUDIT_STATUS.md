@@ -478,12 +478,23 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 <!-- /AUDIT_DELTA_V1 -->
 
 <!-- AUDIT_DELTA_V1 -->
-## 2026-11-12 — [GPT] Proposta de revisão humana da migração Supabase staging para VM Marina — PR #340
+## 2026-11-12 — [GPT] Preflight read-only do backup offsite no Supabase Free (#191)
 
 - Base SHA: 7fff55e36e6df895c8d8cd614fc3ea6da32145c2
+- Impacto: acrescenta a opcao manual offsite_preflight no workflow ja existente de evidencias do staging, com o runner self-hosted existente, sem criar worker persistente. A rotina inspeciona somente identidade de origem, pg_dump PG17, chave publica GPG, CA Supabase pinada e metadados OCI NoPublicAccess; nao injeta senha do banco nem grant de exportacao. A consulta agendada ao provedor segue igual e a exportacao cifrada continua exclusiva da opcao offsite_export. Nao modifica gate de promocao nem libera dados clinicos.
+- Testes: RED antes da correcao: teste novo ManagedOffsitePreflightWorkflow reprovou por ausencia do modo, task MCP 2bb4d7f5-6bc8-42c5-84dd-e7008929dcf7. GREEN no mesmo clone isolado apos edicao: teste direcionado PASS, 24/24 testes de contrato da exportacao gerenciada PASS, git diff --check PASS, task MCP c507e4eb-3a26-4dbd-8221-7183fcc3a0a4. Checks GitHub no novo HEAD ainda obrigatorios.
+- Evidencias: projeto real hodbtssikurywwwzdkoy e organizacao tier_free confirmados pelo conector Supabase; documentacao oficial de 05/11/2026 recomenda export offsite para Free; auditores podem consultar apenas o preflight sem exportar dados, e a saida nao certifica restauração nem quatro buckets/63 objetos.
+- Pendencias: integrar pelos gates tecnicos oficiais, executar o novo preflight somente leitura no runner existente e corrigir os erros de infraestrutura que estiverem dentro da autorizacao atual. A certificacao de exportacao real, backup Storage, custodia externa da chave, restore isolado, autorizacao P2 e paridade exact-SHA do staging permanecem obrigatorias; nao fabricar backup nem confundir preflight com APTO.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-12 — [GPT] Proposta de revisão humana da migração Supabase staging para VM Marina — PR #340
+
+- Base SHA: 0a4105253994a84f7643aaaee658543777e955d2
 - Impacto: Acrescenta documento de revisão humana na área security/owner-approvals para a eventual migração de Solange staging Supabase gerenciado para stack isolado na VM Marina. A PR é somente proposta: não cria grant executável, regra impeditiva, alteração de RBAC, exportação, importação, Storage, serviço, banco, credencial ou cutover.
-- Testes: RED no Repository Governance Gate do HEAD c0a163ebacdd180685f028eef308eb3d4ef56cbd, run 43321809889/job 131544096516, exclusivamente por falta de AUDIT_LEDGER_DELTA_V1; 7/7 testes de roteamento e 28/28 testes auxiliares PASS. Este delta exige novo run no HEAD corrigido antes de declarar GREEN.
+- Testes: RED no Repository Governance Gate do HEAD c0a163ebacdd180685f028eef308eb3d4ef56cbd, run 43321809889/job 131544096516, exclusivamente por falta de AUDIT_LEDGER_DELTA_V1; 7/7 testes de roteamento e 28/28 testes auxiliares PASS. Os checks oficiais deste novo HEAD ainda precisam ser verificados.
 - Evidencias: PR https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/340; issue https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/191; workflow oficial https://github.com/Vivaliz-site/solange-rolla-consultorio/actions/runs/43321809889; inventário da fonte ativa e da Marina documentado em #191, sem leitura de conteúdo clínico.
-- Pendencias: Provar checks oficiais no SHA corrigido e a revisão proprietária formal da proposta; emitir grant P2 executável separado somente após avaliação e autorização humana, preparar stack isolado, comprovar cópia íntegra de DB/Auth/Storage e restore, homologar os 15 dias pela UI real no build exato antes de qualquer cutover. Nada neste registro certifica o ambiente publicado.
+- Pendencias: Provar checks oficiais no SHA corrigido e a revalidar revisão proprietária no HEAD final e consultar as regras existentes para eventuais operações posteriores, preparar stack isolado, comprovar cópia íntegra de DB/Auth/Storage e restore, homologar os 15 dias pela UI real no build exato antes de qualquer cutover. Nada neste registro certifica o ambiente publicado.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
