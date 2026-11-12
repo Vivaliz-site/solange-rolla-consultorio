@@ -13,6 +13,7 @@ const runnerLabelExceptionsByFile: Record<string, string[][]> = {
   'staging-managed-backup-evidence.yml': [
     [...requiredRunnerLabels, 'solange-staging-host'],
     [...requiredRunnerLabels, 'solange-staging-host'],
+    [...requiredRunnerLabels, 'solange-staging-host'],
   ],
 }
 
