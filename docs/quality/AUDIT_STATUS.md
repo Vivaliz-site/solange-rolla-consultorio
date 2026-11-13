@@ -543,3 +543,16 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: aprovacao formal do proprietario no HEAD exato, emitindo grant operacional pelo mecanismo vigente; obter CA real pelo dashboard oficial do Supabase, instalar no runner atual com SHA256 conferido e configurar variables existentes no Environment staging. Em seguida testar backup/restore da fonte correta, migrar no escopo autorizado, validar Auth/MFA/Storage e UI E2E antes de cutover. A CA nao estava provisionada no Environment e o navegador oficial nao tinha sessao Supabase autenticada. Nao gerar CA substituta nem desligar verify-full.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-13 — [GPT] Eliminar vazamento de listeners no worker de documentos — P1
+
+- Base main SHA: ce2718916716d05aa4815a666d35d4e5cd28110c. Execucao em checkout isolado, sem compartilhar branch, runner, servico nem lease de outros agentes. Frente relacionada: issue #183.
+- Causa raiz: defaultWait no src/workers/document-worker-runtime.ts adicionava callback abort em cada espera de polling; no caminho normal de timeout, nao removia o callback. O worker persistente podia acumular listeners no mesmo AbortSignal ao longo de milhares de ciclos.
+- Correcao: ao expirar o timer, remover seu listener e resolver a espera; no cancelamento, cancelar timer e resolver, preservando encerramento rapido. Acrescentado teste de regressao com tres ciclos e contagem explicita de listeners adicionados/removidos, sem dados clinicos ou efeitos externos.
+- RED real: task MCP d9499fd3-857e-4bb5-9f06-e9767db5b982; Vitest 8/9, o novo teste falhou porque removeEventListener foi chamado 0 vezes contra 2 esperadas.
+- GREEN real: task MCP 9d857f36-5e62-4ddb-91aa-5aad8f007f93; Vitest dirigido 9/9, lint sem erros (duas advertencias preexistentes em componentes UI nao alterados), TypeScript typecheck exit 0 e git diff --check exit 0.
+- Verificacao suplementar: task MCP be4d67f5-5791-4207-b963-fb879c9c26f1 para regressao completa, build do worker e verificacoes de arquitetura/modulos/migrations; registrar resultados efetivos antes de certificacao. Nenhum deploy, restart, migracao ou gravacao externa executados nesta mudanca.
+- Estado: NAO_APTO ate checks oficiais no HEAD exato, merge permitido, readback do release e homologacao requerida, inclusive UI real onde aplicavel. Este delta nao concede P2 da migracao Supabase de #191 nem altera a pausa do ML Returns.
+<!-- /AUDIT_DELTA_V1 -->

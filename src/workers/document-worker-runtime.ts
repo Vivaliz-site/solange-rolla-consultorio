@@ -69,11 +69,16 @@ export async function processDocumentJob(jobId: string, dependencies: {
 function defaultWait(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
     if (signal.aborted) return resolve()
-    const timer = setTimeout(resolve, ms)
-    signal.addEventListener('abort', () => {
+    const onAbort = () => {
       clearTimeout(timer)
       resolve()
-    }, { once: true })
+    }
+    const timer = setTimeout(() => {
+      // Polling pode durar indefinidamente: remover o listener quando o tempo acaba.
+      signal.removeEventListener('abort', onAbort)
+      resolve()
+    }, ms)
+    signal.addEventListener('abort', onAbort, { once: true })
   })
 }
 
