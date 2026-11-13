@@ -10,7 +10,13 @@ app_valid() {
   [ -f "$APP/package.json" ] && [ -f "$APP/.env.production.local" ]
 }
 current_tunnel_url() {
-  docker logs solange-demo-tunnel 2>&1 | grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com' | tail -1 || true
+  # O log agrega ciclos anteriores; a ultima URL global pode estar revogada.
+  # Consultar somente a instancia efetivamente ativa e limitar o volume lido.
+  state=$(docker inspect -f '{{.State.Status}}' solange-demo-tunnel 2>/dev/null || true)
+  [ "$state" = running ] || return 0
+  started=$(docker inspect -f '{{.State.StartedAt}}' solange-demo-tunnel 2>/dev/null || true)
+  [ -n "$started" ] || return 0
+  docker logs --since "$started" --tail 300 solange-demo-tunnel 2>&1 | grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com' | tail -1 || true
 }
 ensure_running() {
   for c in solange-demo-gateway solange-demo-tunnel; do
