@@ -510,3 +510,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: nenhum deploy, cutover, backup clínico ou E2E público foi executado nesta mudança. O staging publicado não está certificado no SHA da PR; #191 (fonte gerenciada e restore), #98 (UI com dados sintéticos) e #298 continuam NÃO APTO até comprovação operacional. Não afirmar que um teste sintético verifica o Quick Tunnel real.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-13 — [GPT] Portabilidade dos testes de auditoria Linux/Windows — issue #190
+
+- Base SHA: 2a006558f9e135428a8b4c731d093f8aa24db4a9
+- Impacto: Corrige falsos negativos do harness local no Windows: extracao de timeout E2E agora normaliza CRLF/CR; verificacoes de workflows normalizam newlines antes dos asserts; teste do hook pre-push continua integral no Linux e em Windows com bash instalado, omitindo apenas quando o interpretador estiver ausente; casos de checksum que exigem shell POSIX sao explicitamente skipped no Windows. Nao modifica codigo de produto, backup real, CI, gates, politicas de aprovacao, auth, dados clinicos ou endpoints.
+- Testes: RED sintetico reproduzido em Node com regex original sobre workflow CRLF (falha na extracao do timeout); GREEN da mesma regex com normalizacao (retorna 45). Adicionados testes Vitest de CRLF/CR e skips explicitos para capacidades Unix. Executar suites oficiais da PR para provar regressao e lint; nao alegar testagem Windows real sem runner Windows.
+- Evidencias: issue https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/190 e regressao deterministica sobre fixture CRLF; PR tecnica sera vinculada ao checkpoint nesta issue. Nenhuma operacao em banco, Cloudflare, Storage, runner, servico, pagamento ou dados.
+- Pendencias: CI/checks no HEAD exato, revisao de regressao, merge automatizado oficial; homologacao grafica do Solange e migracao clinica self-hosted continuam dependentes de #191 e #98. Esta alteracao so corrige ferramenta de teste e nao certifica staging ou release.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->

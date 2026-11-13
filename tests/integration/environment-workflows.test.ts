@@ -3,6 +3,14 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
+function normalizeWorkflowText(source: string): string {
+  return source.replace(/\r\n?/g, '\n')
+}
+
+function readWorkflowText(filePath: string): string {
+  return normalizeWorkflowText(readFileSync(filePath, 'utf8'))
+}
+
 const previewScript = path.join(process.cwd(), 'scripts/preview-env.mjs')
 const stagingScript = path.join(process.cwd(), 'scripts/staging-lock.mjs')
 const stagingWorkflow = path.join(process.cwd(), '.github/workflows/staging-promote.yml')
@@ -32,14 +40,20 @@ function run(script: string, environment: Record<string, string>) {
 }
 
 describe('environment workflow contracts', () => {
+  it('normaliza conteúdo de workflow com CRLF ou CR para comparar contratos no Windows', () => {
+    const fixture = 'jobs:\n  e2e:\n    timeout-minutes: 45\n'
+    expect(normalizeWorkflowText(fixture.replace(/\n/g, '\r\n'))).toBe(fixture)
+    expect(normalizeWorkflowText(fixture.replace(/\n/g, '\r'))).toBe(fixture)
+  })
+
   it('automatically promotes staging after canonical main checks without an external kill switch', () => {
-    const workflow = readFileSync(stagingWorkflow, 'utf8')
+    const workflow = readWorkflowText(stagingWorkflow)
     expect(workflow).not.toContain("vars.STAGING_AUTO_PROMOTE_ENABLED == 'true'")
     expect(workflow).toContain("github.event.workflow_run.conclusion == 'success'")
   })
 
   it('requires all canonical checks and deploys the exact main SHA', () => {
-    const workflow = readFileSync(stagingWorkflow, 'utf8')
+    const workflow = readWorkflowText(stagingWorkflow)
     expect(workflow).toContain('workflows: [CI, Database, Repository Governance Gate, Absolute Audit Main Guard]')
     expect(workflow).toContain('actions: read')
     expect(workflow).toContain('Verify canonical main SHA and checks')
@@ -59,7 +73,7 @@ describe('environment workflow contracts', () => {
   })
 
   it('propagates staging project identity into the generated runtime environment', () => {
-    const workflow = readFileSync(stagingWorkflow, 'utf8')
+    const workflow = readWorkflowText(stagingWorkflow)
     expect(workflow).toContain("SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}")
     expect(workflow).toContain("'SUPABASE_PROJECT_REF': os.environ['SUPABASE_PROJECT_REF']")
     expect(workflow).toContain("'SUPABASE_STAGING_PROJECT_REF': os.environ['SUPABASE_STAGING_PROJECT_REF']")
@@ -79,28 +93,28 @@ describe('environment workflow contracts', () => {
   })
 
   it('uses the Supabase Management API path for staging migrations', () => {
-    const workflow = readFileSync(stagingWorkflow, 'utf8')
+    const workflow = readWorkflowText(stagingWorkflow)
     expect(workflow).toContain('SUPABASE_ACCESS_TOKEN')
     expect(workflow).toContain('node scripts/apply-staging-migrations.mjs')
     expect(workflow).not.toContain('SUPABASE_DB_URL')
   })
 
   it('runs the database security smoke and makes app smoke conditional', () => {
-    const workflow = readFileSync(stagingWorkflow, 'utf8')
+    const workflow = readWorkflowText(stagingWorkflow)
     expect(workflow).toContain('node scripts/verify-staging-accounting-rls.mjs')
     expect(workflow).toContain("if: vars.STAGING_APP_URL != ''")
     expect(workflow).not.toContain('test -n "$STAGING_APP_URL"')
   })
 
   it('accepts workflow_dispatch re-validation runs, not only push, as proof a SHA was checked', () => {
-    const workflow = readFileSync(stagingWorkflow, 'utf8')
+    const workflow = readWorkflowText(stagingWorkflow)
     expect(workflow).toContain("github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch'")
     expect(workflow).toContain("acceptedEvents = ['push', 'workflow_dispatch']")
     expect(workflow).toContain("new URLSearchParams({ head_sha: sha, event, per_page: '100' })")
   })
 
   it('dispatches exact-SHA post-merge checks without a billed hosted-runner handoff', () => {
-    const autoMerge = readFileSync(autoMergeWorkflow, 'utf8')
+    const autoMerge = readWorkflowText(autoMergeWorkflow)
     expect(autoMerge).toContain('Re-validate merged main at its exact SHA')
     expect(autoMerge).toContain('for workflow in ci.yml db.yml repository-governance.yml')
     expect(autoMerge).toContain('absolute-audit-main-guard.yml')
@@ -110,7 +124,7 @@ describe('environment workflow contracts', () => {
   })
 
   it('uses the self-hosted workflow_run promotion gate after each canonical main check', () => {
-    const promotion = readFileSync(stagingWorkflow, 'utf8')
+    const promotion = readWorkflowText(stagingWorkflow)
     expect(promotion).toContain('workflows: [CI, Database, Repository Governance Gate, Absolute Audit Main Guard]')
     expect(promotion).toContain('types: [completed]')
     expect(promotion).toContain("github.event.workflow_run.conclusion == 'success'")
@@ -123,15 +137,15 @@ describe('environment workflow contracts', () => {
   })
 
   it('cannot occupy the only runner while polling for other canonical checks', () => {
-    const autoMerge = readFileSync(autoMergeWorkflow, 'utf8')
-    const promotion = readFileSync(stagingWorkflow, 'utf8')
+    const autoMerge = readWorkflowText(autoMergeWorkflow)
+    const promotion = readWorkflowText(stagingWorkflow)
     expect(autoMerge).not.toContain('sleep 15')
     expect(autoMerge).not.toContain('staging-handoff:')
     expect(promotion).toContain("github.event_name == 'workflow_run'")
   })
 
   it('allocates a runner-local E2E port instead of assuming port 3000 is free', () => {
-    const workflow = readFileSync(ciWorkflow, 'utf8')
+    const workflow = readWorkflowText(ciWorkflow)
     const e2eJob = workflow.split('\n  e2e:')[1] ?? ''
     const endToEndStep = e2eJob.split('      - name: End-to-end tests')[1] ?? ''
     expect(endToEndStep).toContain('for attempt in 1 2 3 4 5')
@@ -143,14 +157,14 @@ describe('environment workflow contracts', () => {
   })
 
   it('builds every worker with the same promoted immutable SHA', () => {
-    const workflow = readFileSync(stagingWorkflow, 'utf8')
+    const workflow = readWorkflowText(stagingWorkflow)
     expect(workflow).toContain("IMAGE=\"solange-document-worker:$PROMOTE_SHA\"")
     expect(workflow).toContain("IMAGE=\"solange-messaging-worker:$PROMOTE_SHA\"")
     expect(workflow).toContain("IMAGE=\"solange-recurring-payables-worker:$PROMOTE_SHA\"")
   })
 
   it('runs browser-driven operational homologation against the exact staged SHA before finalizing the release', () => {
-    const workflow = readFileSync(stagingWorkflow, 'utf8')
+    const workflow = readWorkflowText(stagingWorkflow)
     expect(workflow).toContain('Real UI staging homologation')
     expect(workflow).toContain('E2E_TARGET_ENV')
     expect(workflow).toContain('E2E_ALLOWED_BASE_URL')
@@ -167,7 +181,7 @@ describe('environment workflow contracts', () => {
   })
 
   it('audits historical UI state transitions against the exact promoted SHA', () => {
-    const workflow = readFileSync(historicalAuditWorkflow, 'utf8')
+    const workflow = readWorkflowText(historicalAuditWorkflow)
     expect(workflow).toContain('workflows: [Staging Promote]')
     expect(workflow).toContain('workflow_dispatch:')
     expect(workflow).toContain('expected_sha:')
@@ -192,8 +206,8 @@ describe('environment workflow contracts', () => {
   })
 
   it('preflights the actual managed staging database before migrations without legacy Docker backup', () => {
-    const workflow = readFileSync(stagingWorkflow, 'utf8')
-    const backup = readFileSync(backupScript, 'utf8')
+    const workflow = readWorkflowText(stagingWorkflow)
+    const backup = readWorkflowText(backupScript)
     expect(backup).toContain('DEST=${SOLANGE_BACKUP_DEST:-/home/ubuntu/solange-client-demo/backups}')
     expect(backup).not.toContain('/mnt/fredwin-backup')
     expect(backup).toContain('backup_failed: source_identity_mismatch')
@@ -213,7 +227,7 @@ describe('environment workflow contracts', () => {
   })
 
   it('only removes the recurring worker when this deployment actually promoted its candidate', () => {
-    const workflow = readFileSync(stagingWorkflow, 'utf8')
+    const workflow = readWorkflowText(stagingWorkflow)
     const deployRollback = workflow.split('          rollback() {')[1]?.split('          cleanup_stage')[0] ?? ''
     const failedValidationRollback = workflow.split('      - name: Rollback staging release after failed validation')[1]?.split('      - name: Finalize promoted release')[0] ?? ''
 
@@ -227,7 +241,7 @@ describe('environment workflow contracts', () => {
   })
 
   it('rolls back only resources created by the current staging transaction', () => {
-    const workflow = readFileSync(stagingWorkflow, 'utf8')
+    const workflow = readWorkflowText(stagingWorkflow)
     expect(workflow).toContain('TRANSACTION="$ROOT/state/deploy-transaction-$PROMOTE_SHA"')
     expect(workflow).toContain('APP_SWAPPED=0')
     expect(workflow).toContain('WORKERS_SWAPPED=0')
