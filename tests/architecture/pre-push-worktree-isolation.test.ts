@@ -20,8 +20,11 @@ function makeExecutable(file: string) {
   try { chmodSync(file, 0o755) } catch { /* Windows may ignore POSIX mode bits. */ }
 }
 
+const bashAvailable = process.platform !== 'win32'
+  || spawnSync('bash', ['-c', 'exit 0'], { stdio: 'ignore' }).status === 0
+
 describe('pre-push worktree isolation', () => {
-  it('clears exported parent Git context before validator child repositories run', () => {
+  it.skipIf(!bashAvailable)('clears exported parent Git context before validator child repositories run', () => {
     const root = mkdtempSync(path.join(os.tmpdir(), 'prepush-worktree-'))
     const repo = path.join(root, 'repo')
     mkdirSync(repo)
