@@ -533,6 +533,16 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
 
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-13 — [GPT] Solicitacao P2 de migracao privada para Marina — PR #343
+
+- Base SHA: ac33aa3c672baf51448c9df15289ae26cbfe7220
+- Impacto: Acrescenta somente solicitacao JSON de concessao P2 para copiar de forma privada a origem gerenciada Supabase staging de Solange para stack self-hosted isolado na Marina, incluindo DB17, Auth/MFA, APIs e Storage. A decisao de migrar ja consta na PR #340; esta PR NAO cria decisao nova, gate, restricao, permissao IAM, segredo, acesso clinico, workflow, exportacao, servico, DNS ou cutover. `owner_approval=null` e `effective_grant=false` impedem confundir documento com autorizacao efetiva.
+- Testes: JSON parse valido; invariantes `effective_grant=false`, `owner_approval=null`, origem e host exatos conferidos contra main; diff revisado para conter apenas solicitacao e este delta. O Repository Governance Gate falhou no HEAD inicial c66a48f8 por falta de registro de delta (run 43451880114/job 131975842018); corrigido nesta revisao, ainda exige novos checks oficiais.
+- Evidencias: PR https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/343, solicitacao de revisao formal para shopvivaliz-human, issue https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/191; Supabase vinculado confirmou staging ACTIVE_HEALTHY em PostgreSQL 17.6.1.166. Nenhuma escrita em dado do projeto.
+- Pendencias: aprovacao formal do proprietario no HEAD exato, emitindo grant operacional pelo mecanismo vigente; obter CA real pelo dashboard oficial do Supabase, instalar no runner atual com SHA256 conferido e configurar variables existentes no Environment staging. Em seguida testar backup/restore da fonte correta, migrar no escopo autorizado, validar Auth/MFA/Storage e UI E2E antes de cutover. A CA nao estava provisionada no Environment e o navegador oficial nao tinha sessao Supabase autenticada. Nao gerar CA substituta nem desligar verify-full.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
 
 <!-- AUDIT_DELTA_V1 -->
 ## 2026-11-13 — [GPT] Marcador da URL de staging so apos restart bem-sucedido — issue #298
