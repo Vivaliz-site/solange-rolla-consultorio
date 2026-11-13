@@ -543,3 +543,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: aprovacao formal do proprietario no HEAD exato, emitindo grant operacional pelo mecanismo vigente; obter CA real pelo dashboard oficial do Supabase, instalar no runner atual com SHA256 conferido e configurar variables existentes no Environment staging. Em seguida testar backup/restore da fonte correta, migrar no escopo autorizado, validar Auth/MFA/Storage e UI E2E antes de cutover. A CA nao estava provisionada no Environment e o navegador oficial nao tinha sessao Supabase autenticada. Nao gerar CA substituta nem desligar verify-full.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-13 — [GPT] Marcador da URL de staging so apos restart bem-sucedido — issue #298
+
+- Base SHA: ce2718916716d05aa4815a666d35d4e5cd28110c
+- Impacto: `ops/staging/reconcile-demo.sh` so publica `current-url.txt` apos `docker restart` bem-sucedido; falha transitoria preserva o marcador antigo e e tentada novamente pelo loop existente, mesmo que `APP_URL` ja tenha sido atualizado. A correcao evita falso indicador de publicacao, sem alterar politica, gate, credenciais, workloads, dados clinicos ou servicos reais. Acrescentada regressao `tests/staging-reconcile-marker-after-restart.sh` com Docker falso.
+- Testes: RED no script original com `exit=1` apos falha de restart simulado; GREEN no patch: `PASS: marker follows successful restart, retry is idempotent`. `sh -n` em ambos scripts PASS. Suites oficiais, CI e verificacao de SHA devem ser acompanhadas no HEAD final da PR; nenhum sucesso de deploy alegado.
+- Evidencias: reproducoes locais isoladas (2026-11-13); issue https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/298; branch `gpt/solange-restart-marker-20261113`, sem escrita em ambiente clinico. Readback MCP Marina anterior confirmou que o staging do projeto nao possui container Solange ativo, logo este teste nao prova URL HTTPS publicada.
+- Pendencias: revisar diff, checks CI, merge oficial e readback no main; staging Quick Tunnel, UI grafica, backup/restore do Supabase gerenciado e migracao a Marina seguem nao certificados. Sem executar restart, publicacao de staging, transferencia clinica ou cutover nesta alteracao.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->

@@ -9,8 +9,9 @@ describe('staging demo reconciler', () => {
     expect(script).not.toContain('NEXT_PUBLIC_SUPABASE_URL=.*$url')
   })
 
-  it('restarts the web process without rebuilding the deployed SHA', () => {
-    expect(script).toContain('docker restart solange-client-demo-web')
+  it('restarts the configured web process without rebuilding the deployed SHA', () => {
+    expect(script).toContain('WEB=solange-client-demo-web')
+    expect(script).toContain('docker restart "$WEB"')
     expect(script).not.toContain('npm run build')
   })
 })
