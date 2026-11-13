@@ -41,17 +41,25 @@ reconcile_url() {
   app_valid || { log 'app incomplete; URL reconcile deferred'; return 0; }
   url=$(current_tunnel_url)
   [ -n "$url" ] || { log 'tunnel URL unavailable'; return 0; }
-  printf '%s\n' "$url" > "$URL_FILE"
   current=$(sed -n 's/^APP_URL=//p' "$APP/.env.production.local" | tail -1)
-  [ "$current" = "$url" ] && return 0
+  marker=$(cat "$URL_FILE" 2>/dev/null || true)
+  [ "$current" = "$url" ] && [ "$marker" = "$url" ] && return 0
 
-  log "tunnel URL changed; updating APP_URL"
-  if grep -q '^APP_URL=' "$APP/.env.production.local"; then
-    sed -i -E "s#^APP_URL=.*#APP_URL=$url#" "$APP/.env.production.local"
-  else
-    printf 'APP_URL=%s\n' "$url" >> "$APP/.env.production.local"
+  if [ "$current" != "$url" ]; then
+    log "tunnel URL changed; updating APP_URL"
+    if grep -q '^APP_URL=' "$APP/.env.production.local"; then
+      sed -i -E "s#^APP_URL=.*#APP_URL=$url#" "$APP/.env.production.local"
+    else
+      printf 'APP_URL=%s\n' "$url" >> "$APP/.env.production.local"
+    fi
   fi
-  docker restart solange-client-demo-web >/dev/null
+  # Confirmar o reinicio antes de publicar a URL. Se ele falhar, o loop
+  # tentara novamente, mesmo que a configuracao APP_URL ja tenha mudado.
+  if ! docker restart "$WEB" >/dev/null; then
+    log 'web restart failed; URL marker unchanged; retry scheduled'
+    return 0
+  fi
+  printf '%s\n' "$url" > "$URL_FILE"
   log "web restarted for $url"
 }
 
