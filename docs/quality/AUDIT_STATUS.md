@@ -487,3 +487,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: integrar pelos gates tecnicos oficiais, executar o novo preflight somente leitura no runner existente e corrigir os erros de infraestrutura que estiverem dentro da autorizacao atual. A certificacao de exportacao real, backup Storage, custodia externa da chave, restore isolado, autorizacao P2 e paridade exact-SHA do staging permanecem obrigatorias; nao fabricar backup nem confundir preflight com APTO.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-12 — [GPT] Proposta de revisão humana da migração Supabase staging para VM Marina — PR #340
+
+- Base SHA: 0a4105253994a84f7643aaaee658543777e955d2
+- Impacto: Acrescenta documento de revisão humana na área security/owner-approvals para a eventual migração de Solange staging Supabase gerenciado para stack isolado na VM Marina. A PR é somente proposta: não cria grant executável, regra impeditiva, alteração de RBAC, exportação, importação, Storage, serviço, banco, credencial ou cutover.
+- Testes: RED no Repository Governance Gate do HEAD c0a163ebacdd180685f028eef308eb3d4ef56cbd, run 43321809889/job 131544096516, exclusivamente por falta de AUDIT_LEDGER_DELTA_V1; 7/7 testes de roteamento e 28/28 testes auxiliares PASS. Os checks oficiais deste novo HEAD ainda precisam ser verificados.
+- Evidencias: PR https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/340; issue https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/191; workflow oficial https://github.com/Vivaliz-site/solange-rolla-consultorio/actions/runs/43321809889; inventário da fonte ativa e da Marina documentado em #191, sem leitura de conteúdo clínico.
+- Pendencias: Provar checks oficiais no SHA corrigido e a revalidar revisão proprietária no HEAD final e consultar as regras existentes para eventuais operações posteriores, preparar stack isolado, comprovar cópia íntegra de DB/Auth/Storage e restore, homologar os 15 dias pela UI real no build exato antes de qualquer cutover. Nada neste registro certifica o ambiente publicado.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
