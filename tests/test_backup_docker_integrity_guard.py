@@ -39,17 +39,20 @@ class LocalRestoreIntegrityTests(unittest.TestCase):
         return subprocess.run(["sh", str(SCRIPT)], env=self.env,
                               capture_output=True, text=True, timeout=8)
 
+    @unittest.skipIf(os.name == "nt", "exige shell POSIX e ferramentas de checksum Unix")
     def test_missing_checksum_rejected_before_docker(self) -> None:
         result = self.run_drill()
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(self.marker.exists(), result.stderr)
 
+    @unittest.skipIf(os.name == "nt", "exige shell POSIX e ferramentas de checksum Unix")
     def test_mismatched_checksum_rejected_before_docker(self) -> None:
         (Path(str(self.backup) + ".sha256")).write_text("0" * 64 + "  fixture.dump\n")
         result = self.run_drill()
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(self.marker.exists(), result.stderr)
 
+    @unittest.skipIf(os.name == "nt", "exige shell POSIX e ferramentas de checksum Unix")
     def test_symlink_archive_rejected_before_docker(self) -> None:
         link = self.backup.parent / "archive-link.dump"
         link.symlink_to(self.backup)
@@ -65,6 +68,7 @@ class LocalRestoreIntegrityTests(unittest.TestCase):
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text()
         self.assertIn("test_backup_docker_integrity_guard.py", ci)
 
+    @unittest.skipIf(os.name == "nt", "exige shell POSIX e ferramentas de checksum Unix")
     def test_valid_checksum_passes_preflight_only(self) -> None:
         (Path(str(self.backup) + ".sha256")).write_text(
             hashlib.sha256(self.backup.read_bytes()).hexdigest() + "  fixture.dump\n"
