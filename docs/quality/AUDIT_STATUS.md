@@ -498,3 +498,15 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: Provar checks oficiais no SHA corrigido e a revalidar revisão proprietária no HEAD final e consultar as regras existentes para eventuais operações posteriores, preparar stack isolado, comprovar cópia íntegra de DB/Auth/Storage e restore, homologar os 15 dias pela UI real no build exato antes de qualquer cutover. Nada neste registro certifica o ambiente publicado.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-13 — [GPT] Correção de extração da URL do Quick Tunnel de staging — PR #341, issue #298
+
+- Base SHA: 0adf98b4e96a26866986e2f9bf49d98dacbc897c
+- Impacto: `ops/staging/reconcile-demo.sh` deixa de reutilizar URLs históricas de ciclos anteriores de `solange-demo-tunnel`: consulta o status e a hora de início do container ativo e limita a leitura a 300 linhas do ciclo vigente. Acrescenta regressão sintética em `tests/staging-reconcile-tunnel-url.sh`. Nenhum gate, regra, permissão, autenticação, dado clínico, serviço, configuração comercial ou DNS foi alterado.
+- Testes: script anterior retornava `https://stale-historical.trycloudflare.com` na simulação de reinício e falhou com `FAIL: URL de ciclo anterior reutilizada`; após a correção retornou apenas `https://live-current.trycloudflare.com` e vazio para container parado, `PASS`. `sh -n` em ambos os scripts PASS. O teste é totalmente local, sem start/restart de container ou escrita em runtime.
+- CI: Repository Governance Gate run 43392779193 falhou por ausência desta entrada de `AUDIT_LEDGER_DELTA`; corrigida no mesmo PR, pendente de nova execução oficial e validação dos checks no HEAD final.
+- Evidencias: PR https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/341; problema real e reproduções do staging em https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/298. Testes RED/GREEN executados em ambiente isolado com simulação Docker.
+- Pendencias: nenhum deploy, cutover, backup clínico ou E2E público foi executado nesta mudança. O staging publicado não está certificado no SHA da PR; #191 (fonte gerenciada e restore), #98 (UI com dados sintéticos) e #298 continuam NÃO APTO até comprovação operacional. Não afirmar que um teste sintético verifica o Quick Tunnel real.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
