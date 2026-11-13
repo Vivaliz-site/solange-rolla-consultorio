@@ -546,13 +546,12 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 
 
 <!-- AUDIT_DELTA_V1 -->
-## 2026-11-13 — [GPT] Eliminar vazamento de listeners no worker de documentos — P1
+## 2026-11-13 — [GPT] Correção de vazamento de listeners do worker de documentos — P1, PR #346
 
-- Base main SHA: ce2718916716d05aa4815a666d35d4e5cd28110c. Execucao em checkout isolado, sem compartilhar branch, runner, servico nem lease de outros agentes. Frente relacionada: issue #183.
-- Causa raiz: defaultWait no src/workers/document-worker-runtime.ts adicionava callback abort em cada espera de polling; no caminho normal de timeout, nao removia o callback. O worker persistente podia acumular listeners no mesmo AbortSignal ao longo de milhares de ciclos.
-- Correcao: ao expirar o timer, remover seu listener e resolver a espera; no cancelamento, cancelar timer e resolver, preservando encerramento rapido. Acrescentado teste de regressao com tres ciclos e contagem explicita de listeners adicionados/removidos, sem dados clinicos ou efeitos externos.
-- RED real: task MCP d9499fd3-857e-4bb5-9f06-e9767db5b982; Vitest 8/9, o novo teste falhou porque removeEventListener foi chamado 0 vezes contra 2 esperadas.
-- GREEN real: task MCP 9d857f36-5e62-4ddb-91aa-5aad8f007f93; Vitest dirigido 9/9, lint sem erros (duas advertencias preexistentes em componentes UI nao alterados), TypeScript typecheck exit 0 e git diff --check exit 0.
-- Verificacao suplementar: task MCP be4d67f5-5791-4207-b963-fb879c9c26f1 para regressao completa, build do worker e verificacoes de arquitetura/modulos/migrations; registrar resultados efetivos antes de certificacao. Nenhum deploy, restart, migracao ou gravacao externa executados nesta mudanca.
-- Estado: NAO_APTO ate checks oficiais no HEAD exato, merge permitido, readback do release e homologacao requerida, inclusive UI real onde aplicavel. Este delta nao concede P2 da migracao Supabase de #191 nem altera a pausa do ML Returns.
+- Base SHA: ce2718916716d05aa4815a666d35d4e5cd28110c
+- Impacto: Em src/workers/document-worker-runtime.ts, a espera repetida do worker removia o listener de abort apenas no encerramento de sua vida; timeouts normais mantinham callbacks no mesmo AbortSignal. Corrigido o descarte do callback após cada timeout, sem modificar dados clínicos, migração Supabase, serviços de produção, restrições, grants ou o fluxo de cancelamento. Teste preventivo adicionado em src/workers/document-worker-runtime.test.ts.
+- Testes: RED real no código anterior: Vitest 8/9, regressão falhou por zero remoções contra duas esperadas (MCP task d9499fd3-857e-4bb5-9f06-e9767db5b982). GREEN após correção: 9/9 testes dirigidos, typecheck e lint sem erros (MCP task 9d857f36-5e62-4ddb-91aa-5aad8f007f93). Regressão mais ampla e build executados em tarefa suplementar be4d67f5-5791-4207-b963-fb879c9c26f1, sujeitos a readback. A execução CI inicial detectou falha do formato deste ledger; ajustado nesta revisão, pendente de CI oficial no HEAD atualizado.
+- Evidencias: PR https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/346; falha de governança anterior em https://github.com/Vivaliz-site/solange-rolla-consultorio/actions/runs/43512832515/job/132187127381 com AUDIT_LEDGER_DELTA=FAIL por ausência dos seis campos obrigatórios; teste de regressão preservado na PR; canário administrativo MCP Marina audit 9df1420f-9c12-4659-aaca-e6d0bb2babf8 nesta rodada.
+- Pendencias: Confirmar o governance-gate, CI Database e suites oficiais no novo HEAD, fazer merge somente com todos os gates efetivos, verificar o SHA final em main e o release do worker no ambiente correto; revalidar comportamento real e UI/E2E quando pertinente. A migração Supabase #191 continua condicionada a grant P2 efetivo, lease e CA oficial; a P0 Amazon #630 segue independente. Não declarar APTO geral.
+- Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
