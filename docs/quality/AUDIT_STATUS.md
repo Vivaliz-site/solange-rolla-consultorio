@@ -536,7 +536,7 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 <!-- AUDIT_DELTA_V1 -->
 ## 2026-11-13 — [GPT] Solicitacao P2 de migracao privada para Marina — PR #343
 
-- Base SHA: 14e57fd14a9855287004fb42773613a1a109b51f
+- Base SHA: ac33aa3c672baf51448c9df15289ae26cbfe7220
 - Impacto: Acrescenta somente solicitacao JSON de concessao P2 para copiar de forma privada a origem gerenciada Supabase staging de Solange para stack self-hosted isolado na Marina, incluindo DB17, Auth/MFA, APIs e Storage. A decisao de migrar ja consta na PR #340; esta PR NAO cria decisao nova, gate, restricao, permissao IAM, segredo, acesso clinico, workflow, exportacao, servico, DNS ou cutover. `owner_approval=null` e `effective_grant=false` impedem confundir documento com autorizacao efetiva.
 - Testes: JSON parse valido; invariantes `effective_grant=false`, `owner_approval=null`, origem e host exatos conferidos contra main; diff revisado para conter apenas solicitacao e este delta. O Repository Governance Gate falhou no HEAD inicial c66a48f8 por falta de registro de delta (run 43451880114/job 131975842018); corrigido nesta revisao, ainda exige novos checks oficiais.
 - Evidencias: PR https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/343, solicitacao de revisao formal para shopvivaliz-human, issue https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/191; Supabase vinculado confirmou staging ACTIVE_HEALTHY em PostgreSQL 17.6.1.166. Nenhuma escrita em dado do projeto.
