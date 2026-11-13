@@ -521,3 +521,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: CI/checks no HEAD exato, revisao de regressao, merge automatizado oficial; homologacao grafica do Solange e migracao clinica self-hosted continuam dependentes de #191 e #98. Esta alteracao so corrige ferramenta de teste e nao certifica staging ou release.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-13 — [GPT] Pedido de concessão P2 operacional para migração privada Solange — PR #344
+
+- Base SHA: 14e57fd14a9855287004fb42773613a1a109b51f
+- Impacto: documento de pedido operacional de privilégio P2 restrito à cópia cifrada e restore isolado de PostgreSQL 17, Auth/MFA e quatro buckets Storage da fonte Supabase gerenciada para a VM Marina. A decisão de destino é a PR #340 já integrada. Este pedido não concede autorização executável, não cria restrições, não altera regras/gates, não modifica dados, DB, workers, DNS, endpoints, autenticação nem serviços; cutover mantém seu escopo independente.
+- Testes: leitura do diff documental na PR #344 sem conteúdo clínico ou segredos; CI, Database e Repository Governance Gate foram vistos em estado queued no HEAD inicial c2cbd1fd3a0657043d6039dc9ffad968d1c56c85. Após este delta, conferir novamente checks oficiais no HEAD atualizado; não declarar GREEN antecipadamente.
+- Evidencias: PR https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/344; checkpoint https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/191#issuecomment-6857286862; MCP canários backend e Marina concluídos e consulta read-only do CA staging sem achado, audits a76a6ffa-ab50-4b20-9cdb-7b8639b47ab7, dc5ad775-9d4b-45c4-968d-ddcf97eb1f22, 09e839f5-bd76-45e1-bd95-836ef97e7acc.
+- Pendencias: revisão por shopvivaliz-human no HEAD exato e grant P2 operacional efetivo, CA oficial Supabase do banco gerenciado, preflight backup, exportação e restore cifrados do banco e Storage, Auth/MFA, integridade e UI exact-SHA; nenhum deles foi executado por este registro.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
