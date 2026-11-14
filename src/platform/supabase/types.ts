@@ -2042,6 +2042,29 @@ export type Database = {
           supersedes_id: string
         }[]
       }
+      create_event_atomic: {
+        Args: {
+          p_capacity: number
+          p_default_price_cents: number
+          p_description: string
+          p_ends_at: string
+          p_location: string
+          p_modality: string
+          p_starts_at: string
+          p_title: string
+          p_type: string
+        }
+        Returns: string
+      }
+      create_event_expense_atomic: {
+        Args: {
+          p_amount_cents: number
+          p_description: string
+          p_event_id: string
+          p_paid_at?: string
+        }
+        Returns: string
+      }
       create_expense_category_atomic: {
         Args: { p_name: string }
         Returns: string
@@ -2067,29 +2090,6 @@ export type Database = {
           p_month_end_fallback: string
           p_start_date: string
           p_vendor_id: string
-        }
-        Returns: string
-      }
-      create_event_atomic: {
-        Args: {
-          p_capacity: number
-          p_default_price_cents: number
-          p_description: string
-          p_ends_at: string
-          p_location: string
-          p_modality: string
-          p_starts_at: string
-          p_title: string
-          p_type: string
-        }
-        Returns: string
-      }
-      create_event_expense_atomic: {
-        Args: {
-          p_amount_cents: number
-          p_description: string
-          p_event_id: string
-          p_paid_at?: string
         }
         Returns: string
       }
