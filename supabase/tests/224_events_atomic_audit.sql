@@ -1,6 +1,6 @@
 begin;
 
-select plan(24);
+select plan(22);
 
 insert into auth.users (id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data)
 values
@@ -217,10 +217,11 @@ select is(
 );
 
 reset role;
+drop trigger test_reject_event_atomic_audit on public.audit_events;
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
-  '{"sub":"fb000000-0000-4000-8000-000000000001","aal":"aal2","role":"authenticated"}',
+  '{"sub":"fb000000-0000-4000-8000-000000000002","aal":"aal2","role":"authenticated"}',
   true
 );
 select lives_ok(
