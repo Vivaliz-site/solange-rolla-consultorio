@@ -42,12 +42,18 @@ reconcile_url >/dev/null
   echo 'FAIL: configuracao preliminar nao atualizada'
   exit 1
 }
+[ ! -f "$TMP/state/applied-url.txt" ] || {
+  echo 'FAIL: restart falho registrou URL como aplicada'; exit 1;
+}
 TEST_RESTART_FAIL=0
 export TEST_RESTART_FAIL
 reconcile_url >/dev/null
 [ "$(cat "$URL_FILE")" = 'https://live.trycloudflare.com' ] || {
   echo 'FAIL: marcador nao atualizado apos reinicio'
   exit 1
+}
+[ "$(cat "$TMP/state/applied-url.txt")" = 'https://live.trycloudflare.com' ] || {
+  echo 'FAIL: restart valido nao registrou URL aplicada'; exit 1;
 }
 [ "$(wc -l < "$TEST_RESTART_LOG" | tr -d ' ')" = 2 ] || {
   echo 'FAIL: faltou repetir reinicio em caso de erro'

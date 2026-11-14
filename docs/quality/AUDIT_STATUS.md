@@ -632,3 +632,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: testes unitarios, pgTAP/Database, CI oficial, merge protegido, readback SHA e release com UI grafica #98. Migracao DB/Auth/Storage da Marina #340 e backup/restore #191 requerem grant P2 e lease efetivos. Nenhuma mutacao externa ou Clinica executada.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-14 — [GPT] Restaurar marcador de Quick Tunnel sem reinicio indevido — #298
+
+- Base SHA: c55557a1a326c1c123f5e97337e735a65adc7058
+- Impacto: Corrige a recuperacao da URL publica em ops/staging/reconcile-demo.sh: nao reiniciar web saudavel apenas porque current-url.txt foi invalidado apos indisponibilidade externa. Aplicar applied-url.txt somente apos restart com sucesso e health valido; manter restart de retry quando APP_URL mudou mas nao foi aplicado. Sem novos gates, restricoes, permissoes ou alteracoes clinicas.
+- Testes: RED em 2f4b1446af0dd2cd8f35a6b010e85b6b899cf486 (restart indevido reproduzido); GREEN no HEAD com 3 suites shell PASS, 23 testes de paridade de staging, 12 testes de transacao de ambiente, 28 testes do ledger e sh -n/git diff --check PASS. Cenario de restart falho preservado.
+- Evidencias: MCP task RED 53789328-fec2-4916-95a1-602a7260438e; GREEN final fc692edb-6263-4a64-9c8c-f9f2b941c374 exit_code=0; commit funcional 24b18e9a3915268fdacf52d22fa450da8c8401a4; PR https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/353. Shellcheck nao instalado, sem prova dessa ferramenta.
+- Pendencias: CI oficial, merge apos branch protection, release staging exact-SHA, UI grafica E2E e verificacao de persistencia no browser. Migracao clinica/backup depende de grant P2 owner-scoped efetivo; nao executada.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->

@@ -87,7 +87,22 @@ reconcile_url() {
   fi
   current=$(sed -n 's/^APP_URL=//p' "$APP/.env.production.local" | tail -1)
   marker=$(cat "$URL_FILE" 2>/dev/null || true)
-  [ "$current" = "$url" ] && [ "$marker" = "$url" ] && return 0
+  # Guardar a URL comprovadamente aplicada ao web APOS um restart bem
+  # sucedido. APP_URL no arquivo nao prova que a instancia ja a carregou.
+  applied_file=${URL_FILE%/*}/applied-url.txt
+  applied=$(cat "$applied_file" 2>/dev/null || true)
+  if [ "$current" = "$url" ] && [ "$marker" = "$url" ]; then
+    # Marker legado valido foi publicado somente apos restart e health.
+    [ "$applied" = "$url" ] || printf '%s\n' "$url" > "$applied_file"
+    return 0
+  fi
+  if [ "$current" = "$url" ] && [ "$applied" = "$url" ]; then
+    # A configuracao ja foi aplicada: recuperar so o marker apos queda
+    # externa, sem reiniciar um web que permanece saudavel.
+    printf '%s\n' "$url" > "$URL_FILE"
+    log 'public health recovered; URL marker restored without web restart'
+    return 0
+  fi
 
   if [ "$current" != "$url" ]; then
     log "tunnel URL changed; updating APP_URL"
@@ -107,6 +122,7 @@ reconcile_url() {
     log 'public health failed after web restart; URL marker invalidated'
     return 0
   fi
+  printf '%s\n' "$url" > "$applied_file"
   printf '%s\n' "$url" > "$URL_FILE"
   log "web restarted and public health confirmed for $url"
 }
