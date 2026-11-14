@@ -111,9 +111,9 @@ select set_config(
   true
 );
 select lives_ok(
-  $ select public.create_event_expense_atomic(
+  $$ select public.create_event_expense_atomic(
     'fb100000-0000-4000-8000-000000000001','atomic expense',1200,null
-  ) $,
+  ) $$,
   'authorized event manager may create event expense atomically'
 );
 select is(
@@ -224,14 +224,14 @@ select set_config(
   true
 );
 select lives_ok(
-  $ select public.create_event_expense_atomic(
+  $$ select public.create_event_expense_atomic(
     'fb100000-0000-4000-8000-000000000001','accounting permitted expense',1400,null
-  ) $,
+  ) $$,
   'accounting retains prior expense access under RLS'
 );
 
 select throws_ok(
-  $ select public.create_event_atomic(
+  $$ select public.create_event_atomic(
     'Accounting Forbidden Event','forbidden','group',
     '2035-03-02T18:00:00Z','2035-03-02T20:00:00Z','Room F','online',4,1000
   ) $$,
