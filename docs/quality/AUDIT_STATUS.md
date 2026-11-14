@@ -565,3 +565,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: Confirmar o governance-gate, CI Database e suites oficiais no novo HEAD, fazer merge somente com todos os gates efetivos, verificar o SHA final em main e o release do worker no ambiente correto; revalidar comportamento real e UI/E2E quando pertinente. A migração Supabase #191 continua condicionada a grant P2 efetivo, lease e CA oficial; a P0 Amazon #630 segue independente. Não declarar APTO geral.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-13 — [GPT] Corrigir rollback da identidade de release no staging — P1 #269
+
+- Base SHA: 13fa58181d7e904771bcc122e6cc24329ba19332
+- Impacto: O workflow staging-promote.yml nao restaurava a ausencia original de state/deployed-sha.txt quando a primeira promocao falhava; o candidato permanecia anunciado como release vigente embora o runtime fosse revertido. A correcao usa marcador explicito de ausencia anterior, reaproveita ops/staging/restore-deployed-sha.sh em ambos os caminhos de rollback, publica SHA via rename atomico e limpa marcadores na finalizacao. Sem novas restricoes, dados clinicos, migracao, grants ou operacoes comerciais.
+- Testes: RED reproduzido com tres falhas antes da inclusao do helper e seu wiring (MCP audit d6d26199-a304-46c5-8a99-8ecc02895493); GREEN de 5/5 testes dirigidos apos alteracao (audit 32738f17-09a7-47b4-a535-f703105e1c10). Regressao ampliada, lint, typecheck, build e checks oficiais exigem resultados separados no HEAD final e nao sao presumidos.
+- Evidencias: clone isolado de main no SHA 13fa58181d7e904771bcc122e6cc24329ba19332 via task 88cd92e5-94c8-45ad-a530-fcf74be1068f; issue https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/269. Workflow Staging Promote 43538691508 falhou no preflight de backup gerenciado do staging, dependencia distinta de #191 que nao pode ser ignorada.
+- Pendencias: executar regressao completa aplicavel, publicar PR tecnica, checks oficiais, integrar quando autorizado e validar release/main SHA; homologar UI #98. Migracao e backup gerenciado #191 exigem grant P2 efetivo, lease e provas de restore; nao declarar APTO.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->

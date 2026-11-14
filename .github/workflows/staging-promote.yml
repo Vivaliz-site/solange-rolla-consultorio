@@ -277,8 +277,8 @@ jobs:
                 docker rename "${WEB}-previous" "$WEB" || true
                 docker start "$WEB" >/dev/null 2>&1 || true
               fi
-              if [ "$SHA_SWAPPED" -eq 1 ] && [ -f "$ROOT/state/previous-deployed-sha.txt" ]; then
-                mv "$ROOT/state/previous-deployed-sha.txt" "$ROOT/state/deployed-sha.txt"
+              if [ "$SHA_SWAPPED" -eq 1 ]; then
+                bash "$GITHUB_WORKSPACE/ops/staging/restore-deployed-sha.sh" "$ROOT"
               fi
               if [ "$RECONCILER_SWAPPED" -eq 1 ] && [ -f "$RECONCILER_PREVIOUS" ]; then
                 mv "$RECONCILER_PREVIOUS" "$ROOT/reconcile.sh"
@@ -289,7 +289,7 @@ jobs:
               if [ "$ENV_SNAPSHOT_TAKEN" -eq 1 ]; then
                 bash "$GITHUB_WORKSPACE/ops/staging/runtime-env-transaction.sh" restore "$ROOT"
               fi
-              rm -f "$TRANSACTION"
+              rm -f "$TRANSACTION" "$ROOT/state/.deployed-sha-$PROMOTE_SHA.tmp"
             fi
             cleanup_stage
             exit "$rc"
@@ -487,12 +487,17 @@ jobs:
           test -s "$CANDIDATE_STATE/recurring/recurring-payables-worker.heartbeat"
           if [ -f "$ROOT/state/deployed-sha.txt" ]; then
             cp "$ROOT/state/deployed-sha.txt" "$ROOT/state/previous-deployed-sha.txt"
+            rm -f "$ROOT/state/previous-deployed-sha.absent"
           else
             rm -f "$ROOT/state/previous-deployed-sha.txt"
+            : > "$ROOT/state/previous-deployed-sha.absent"
           fi
-          printf '%s\n' "$PROMOTE_SHA" > "$ROOT/state/deployed-sha.txt"
+          # Record rollback ownership before publishing, even if the disk fills mid-write.
           SHA_SWAPPED=1
           printf '%s\n' "$PROMOTE_SHA" > "$TRANSACTION"
+          sha_tmp="$ROOT/state/.deployed-sha-$PROMOTE_SHA.tmp"
+          printf '%s\n' "$PROMOTE_SHA" > "$sha_tmp"
+          mv "$sha_tmp" "$ROOT/state/deployed-sha.txt"
 
       - name: Verify deployed SHA
         shell: bash
@@ -636,12 +641,10 @@ jobs:
           else
             docker rm -f "$REC" >/dev/null 2>&1 || true
           fi
-          if [ -f "$ROOT/state/previous-deployed-sha.txt" ]; then
-            mv "$ROOT/state/previous-deployed-sha.txt" "$ROOT/state/deployed-sha.txt"
-          fi
+          bash "$GITHUB_WORKSPACE/ops/staging/restore-deployed-sha.sh" "$ROOT"
           force_rm "$ROOT/state/candidate-$PROMOTE_SHA"
           bash "$GITHUB_WORKSPACE/ops/staging/runtime-env-transaction.sh" restore "$ROOT"
-          rm -f "$TRANSACTION"
+          rm -f "$TRANSACTION" "$ROOT/state/.deployed-sha-$PROMOTE_SHA.tmp"
 
       - name: Finalize promoted release
         shell: bash
@@ -651,7 +654,7 @@ jobs:
           TRANSACTION="$ROOT/state/deploy-transaction-$PROMOTE_SHA"
           docker rm -f solange-client-demo-web-previous solange-document-worker-previous solange-messaging-worker-previous solange-recurring-payables-worker-previous >/dev/null 2>&1 || true
           rm -rf "$ROOT/app-previous" 2>/dev/null || sudo -n rm -rf "$ROOT/app-previous"
-          rm -f "$ROOT/state/previous-deployed-sha.txt" "$TRANSACTION"
+          rm -f "$ROOT/state/previous-deployed-sha.txt" "$ROOT/state/previous-deployed-sha.absent" "$TRANSACTION"
           rm -f "$ROOT/reconcile-previous.sh"
           bash "$GITHUB_WORKSPACE/ops/staging/runtime-env-transaction.sh" finalize "$ROOT"
           # Keep the promoted release state directory: the canonical workers bind-mount it
