@@ -100,7 +100,7 @@ async function changeAppointmentStatusAction(formData: FormData) {
   const command = String(formData.get('command') ?? '') as AppointmentCommand
   const permission = permissionForCommand(command)
   const session = await getStaffSession()
-  const authorized = authorizeStaffPermission(session, permission)
+  authorizeStaffPermission(session, permission)
   const client = await createServerSupabaseClient()
   const appointmentId = String(formData.get('appointment_id') ?? '')
   const redirectTo = redirectBackTo(formData)
@@ -126,41 +126,28 @@ async function changeAppointmentStatusAction(formData: FormData) {
 
   const repository: AppointmentStatusRepository = {
     async updateStatus(id, status) {
-      const { data, error } = await client.from('appointments').update({ status }).eq('id', id)
-        .select('id,person_id,service_id,starts_at,ends_at,status,policy_version,cancellation_deadline_at,cancellation_policy_snapshot')
-        .single()
+      const { data, error } = await client.rpc('transition_staff_appointment_atomic' as never, {
+        p_appointment_id: id,
+        p_expected_status: appointment.status,
+        p_command: command,
+      } as never)
       if (error || !data) throw new Error('AGENDA_STATUS_UPDATE_FAILED')
-      const { error: historyError } = await client.from('appointment_status_history').insert({
-        appointment_id: id,
-        from_status: appointment.status,
-        to_status: status,
-        changed_by_user_id: authorized.userId,
-      })
-      if (historyError) throw new Error('AGENDA_STATUS_HISTORY_FAILED')
+      const updated = data as unknown as Database['public']['Tables']['appointments']['Row']
+      if (updated.status !== status) throw new Error('AGENDA_STATUS_CONFLICT')
       return {
-        id: data.id,
-        personId: data.person_id,
-        serviceId: data.service_id,
-        startsAt: data.starts_at,
-        endsAt: data.ends_at,
-        status: data.status as Appointment['status'],
-        policyVersion: data.policy_version,
-        cancellationDeadlineAt: data.cancellation_deadline_at,
-        cancellationPolicy: normalizeCancellationPolicySnapshot(data.cancellation_policy_snapshot),
+        id: updated.id,
+        personId: updated.person_id,
+        serviceId: updated.service_id,
+        startsAt: updated.starts_at,
+        endsAt: updated.ends_at,
+        status: updated.status as Appointment['status'],
+        policyVersion: updated.policy_version,
+        cancellationDeadlineAt: updated.cancellation_deadline_at,
+        cancellationPolicy: normalizeCancellationPolicySnapshot(updated.cancellation_policy_snapshot),
       }
     },
   }
-
-  const updated = await changeAppointmentStatus(appointment, command, repository)
-  await recordAuditEvent({
-    actorId: authorized.userId,
-    action: 'appointment.status_changed',
-    entityType: 'appointment',
-    entityId: appointmentId,
-    correlationId: appointmentId,
-    metadata: { fromStatus: appointment.status, toStatus: updated.status, command },
-  }, auditRepository(client))
-
+  await changeAppointmentStatus(appointment, command, repository)
   redirect(redirectTo)
 }
 
