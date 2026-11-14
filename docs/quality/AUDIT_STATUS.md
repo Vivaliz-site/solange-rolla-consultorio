@@ -578,9 +578,31 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 <!-- /AUDIT_DELTA_V1 -->
 
 <!-- AUDIT_DELTA_V1 -->
-## 2026-11-14 — [GPT] Recuperar correcao P1 de atomicidade financeira — issue #211
+## 2026-11-13 — [GPT] Corrigir falso-verde do marcador Quick Tunnel do staging (#268)
 
 - Base SHA: 5b8d02d91b9045f3865e22178b4f89cf0668aa31
+- Impacto: O reconciliador nao deve publicar nem manter o marcador de URL de staging para um Quick Tunnel sem health publico. A verificacao agora exercita DNS/TLS/HTTP 200 e contrato JSON de /api/health via Node 24 do container web, sem instalar dependencias nem alterar grants, DB, Auth, Storage, credenciais, protecoes ou servicos em producao. O marcador invalido e retirado e sua recuperacao e automatica, sem criar novo workflow/gate.
+- Testes: RED reproduzido no baseline com marcador indevido (task MCP d98dcb33-0579-4a18-abf4-8f72b6cf0f13, exit_code=1); GREEN e 3/3 testes de regressao staging aprovados (tasks f87ad7a9-2ff0-4c34-9a5d-6ec87f6cf1f7 e 61bf4b6e-06bf-4204-841a-537e277e358a). Na task c7930e8e-2676-4721-8cfa-439ab87e3087, exit_code=0: npm ci PASS; lint 0 errors/2 warnings preexistentes; typecheck PASS; build Next.js PASS; 757 testes PASS/1 SKIP; governanca absoluta PASS; diff --check PASS. Checks CI oficiais no GitHub e staging publicado ainda nao certificados.
+- Evidencias: issue https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/268; alteracoes em ops/staging/reconcile-demo.sh, tests/staging-reconcile-public-health.sh e docs/operations/INCIDENT_RESPONSE.md. Testes isolados nunca acessaram dados clinicos, tokens nem staging real; execucao remota auditada no MCP.
+- Pendencias: checks oficiais e merge do HEAD exato; deploy do reconciliador em staging somente com gates de backup gerenciado autorizados e validados; E2E grafico de URL externa e #98; restore fonte real #191 e migracao Supabase apenas com P2/lease efetivos.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-13 — [GPT] Recuperar corrida de merge concorrente no CI da Solange — P1
+
+- Base SHA: 47209c826397cd39891582c810b3432727756818
+- Impacto: O workflow `.github/workflows/pr-auto-merge.yml` verificava que a PR ainda estava aberta por `jq -e` sem capturar a falha. A PR #347 foi integrada por outro executor às 02:08:32 UTC de 14/11 enquanto o job de auto-merge verificava o mesmo HEAD, fazendo o job falhar às 02:08:34 UTC, embora a integração já estivesse concluída. O fluxo agora sai normalmente para um candidato que deixou de ser elegível e, quando a API confirma merge no HEAD exato, encaminha o SHA de main à revalidação pós-merge existente. Não altera a lista de checks exigidos, aprovação, branch protection, políticas de segurança, grants ou a seleção de merges.
+- Testes: RED reproduzido em simulação isolada com `jq -e` sobre fixture de PR `closed`: exit 1 no código original. GREEN com o tratamento condicional: a PR encerrada é ignorada sem erro e a fixture `open` com HEAD correspondente continua elegível. Teste de contrato adicionado em `tests/integration/pr-auto-merge-post-merge.test.ts`. Testes de suite/CI e validação do SHA mesclado exigem readback independente antes de declarar GREEN oficial.
+- Evidencias: workflow https://github.com/Vivaliz-site/solange-rolla-consultorio/actions/runs/43544605679/job/132292855644; merge da PR #347 em https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/347; testes de fixtures `closed/open` executados localmente sem rede, dados clínicos ou escrita em serviços.
+- Pendencias: conferir CI e governança para a PR técnica, revisão do diff, integração protegida e readback do main; validação de staging/UI da Solange e migração do Supabase gerenciado para Marina continuam NÃO APTAS até backup/restore independente e grant P2 efetivo, sem bypass.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-14 — [GPT] Recuperar correcao P1 de atomicidade financeira — issue #211
+
+- Base SHA: 5e597d905485dc94b9114528a0379fedefed330a
 - Impacto: recupera e reconcilia sobre main vigente a correcao tecnica da antiga PR #221, encerrada sem merge, para cinco mutacoes financeiras: ajuste de recebivel, criacao de contas a pagar, regras de recorrencia, fornecedores e categorias. Cada RPC usa transacao SQL unica para dado de negocio e trilha de auditoria; as politicas RLS e identidades permanecem vigentes. Os deltas novos de messaging e runtime role hardening de main foram preservados na reconciliacao de schema e tipos. A migration antiga nao havia sido integrada e foi renumerada para data posterior a todas as migrations vigentes, sem editar migration ja aplicada. Nao altera grants P2, ambiente clinico, integracoes live, restricoes ou gates.
 - Testes: RED real sobre main reproduziu a falta dos cinco RPCs; apos recuperar o patch, GREEN 3/3 regressao dirigida, npm ci PASS, lint PASS, typecheck PASS, modules:check PASS. O migrations:check detectou corretamente timestamp anterior a migration aplicada (RED), renumerado para 20261114033000 e exige novo GREEN. Regressoes, arquitetura, build, Database/pgTAP e CI oficiais no SHA final serao verificados antes do merge; testes pendentes nao sao declarados verdes.
 - Evidencias: issue https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/211; PR historica https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/221 fechada sem merge; checkout isolado /home/ubuntu/sv-hourly-finance211-20261114 na VM Marina; MCP audits b4b833c8-7556-433a-8352-c9e372f69520 (RED) e 2aaece57-bc7f-48aa-b0a3-478939179330 (reconciliacao). Lease/fencing exclusivo adquirido na VM Marina com owner gpt-hour-corrective-finance211-20261114.

@@ -111,12 +111,29 @@ jobs:
           fi
 
           current_pr="$(gh api "repos/$REPO/pulls/$pr_number")"
-          jq -e --arg sha "$HEAD_SHA" '
+          # The PR can be merged by another authorized executor while checks
+          # are read above. Preserve exact-head revalidation instead of making
+          # this automation fail on a stale 'open' snapshot.
+          if ! jq -e --arg sha "$HEAD_SHA" '
             .state == "open" and
             .base.ref == "main" and
             .head.sha == $sha and
             .head.repo.full_name == .base.repo.full_name
-          ' <<<"$current_pr" >/dev/null
+          ' <<<"$current_pr" >/dev/null; then
+            already_merged_sha="$(jq -r --arg sha "$HEAD_SHA" '
+              select(.merged_at != null and .head.sha == $sha and
+                     .base.ref == "main" and
+                     .head.repo.full_name == .base.repo.full_name) |
+              (.merge_commit_sha // empty)
+            ' <<<"$current_pr")"
+            if [ -n "$already_merged_sha" ]; then
+              echo "merged_main_sha=$already_merged_sha" >> "$GITHUB_OUTPUT"
+              echo "PR #$pr_number merged concurrently at main@$already_merged_sha; revalidating exact SHA."
+            else
+              echo "PR #$pr_number changed while checks were evaluated; skip stale candidate."
+            fi
+            exit 0
+          fi
           mergeable_state="$(jq -r '.mergeable_state // "unknown"' <<<"$current_pr")"
           if [ "$mergeable_state" != "clean" ]; then
             echo "PR #$pr_number is not currently mergeable (mergeable_state=$mergeable_state)."
