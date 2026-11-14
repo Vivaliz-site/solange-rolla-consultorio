@@ -165,6 +165,10 @@
       "audit",
       "payables",
       "receivables"
+    ],
+    "appointment_status_atomic_audit": [
+      "appointments",
+      "audit"
     ]
   },
   "objects": {
@@ -258,6 +262,7 @@
     "public.create_payable_atomic": "payables",
     "public.create_recurrence_rule_atomic": "payables",
     "public.create_vendor_atomic": "payables",
-    "public.create_expense_category_atomic": "payables"
+    "public.create_expense_category_atomic": "payables",
+    "public.transition_staff_appointment_atomic": "appointments"
   }
 }

@@ -609,3 +609,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: validar migrations:check, arquitetura, build, regressao completa, testes SQL/pgTAP em banco descartavel e CI oficial; publicar PR tecnica, reconciliar main concorrente, integrar apenas com gates e revisoes devidas, revalidar SHA efetivo no ambiente e UI #98. A migracao Supabase #191/#340 requer grant P2 efetivo e lease separados, nao concedidos por esta correcao. Amazon Returns #630 permanece independente; nenhuma compensacao executada. Mercado Livre Returns Recovery continua pausado.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-14 — [GPT] Corrigir transicoes de agenda e atendimento sem auditoria atomica — P1 #209
+
+- Base SHA: 7d2e89e80a2fd975fbf98525d9b528b9af093dad
+- Impacto: As transicoes de status no calendario e no atendimento atualizavam appointments, appointment_status_history e audit_events em chamadas separadas, deixando status ou historico sem auditoria quando uma chamada posterior falhava. A RPC security invoker agrupa as tres alteracoes na mesma transacao, bloqueia a linha antes de validar o status esperado, usa auth.uid(), preserva a matriz de transicoes, permissoes e AAL2 clinico existentes. O fluxo publico persist_appointment_response permanece independente. Sem grant P2 ou novas restricoes.
+- Testes: RED reproduzido no SHA de main em teste Vitest direcionado com 3 falhas/1 sucesso, task MCP 87586332-9417-45cd-add2-79e5377ef1e7; GREEN 4/4 no codigo corrigido, task 21d01e9b-f741-46c1-8a48-d2ec23073d06. Verificador de migrations detectou falso objeto por sintaxe SQL e contrato de ownership incompleto; ambos corrigidos sem afrouxar o verificador. pgTAP novo inclui falha sintetica de audit, rollback de status e historico, conflito, transicao invalida e anon; resultados DB/CI oficiais ainda sujeitos a prova.
+- Evidencias: Issue https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/209; clone isolado em /home/ubuntu/shopvivaliz-hourly-work/solange-209-20261114-0430, main do repositorio em 7d2e89e80a2fd975fbf98525d9b528b9af093dad; checkpoint shopvivaliz-hour-20261114-0429-solange209, MCP audit bf56de7c-ccce-473d-bced-d709528fd05d (RED) e e75ec628-f2d2-489e-92de-98f73898dc77 (migrations/modules/typecheck); testes, SHA GitHub e CI a reconciliar na entrega.
+- Pendencias: Validar regressao total, lint/build, Database/pgTAP e checks oficiais no HEAD da PR; merge somente apos gates e revisao formal exigivel; confirmar SHA de main e staging/ambiente efetivo com E2E grafico #98. Migração de Supabase e backups #191/#340 requer grant P2 efetivo e lease; Amazon #630 exige autorizacao P2 para reconciliar 97 casos. MLRR continua pausado, nenhuma mutacao permitida.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
