@@ -72,6 +72,18 @@ describe('environment workflow contracts', () => {
     expect(workflow).toContain('buildSha')
   })
 
+  it('pins the web staging Node image to the same patch as the workers', () => {
+    const workflow = readWorkflowText(stagingWorkflow)
+    const imageReferences = workflow.match(/node:24(?:\.\d+\.\d+)?-bookworm-slim/g) ?? []
+    expect(imageReferences).toEqual([
+      'node:24.19.0-bookworm-slim',
+      'node:24.19.0-bookworm-slim',
+      'node:24.19.0-bookworm-slim',
+    ])
+    const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'))
+    expect(manifest.engines.node).toBe('24.19.0')
+  })
+
   it('propagates staging project identity into the generated runtime environment', () => {
     const workflow = readWorkflowText(stagingWorkflow)
     expect(workflow).toContain("SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}")
