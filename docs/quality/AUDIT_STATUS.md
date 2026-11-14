@@ -643,4 +643,3 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: CI oficial, merge apos branch protection, release staging exact-SHA, UI grafica E2E e verificacao de persistencia no browser. Migracao clinica/backup depende de grant P2 owner-scoped efetivo; nao executada.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
-
