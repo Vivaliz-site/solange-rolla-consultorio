@@ -620,3 +620,15 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: Validar regressao total, lint/build, Database/pgTAP e checks oficiais no HEAD da PR; merge somente apos gates e revisao formal exigivel; confirmar SHA de main e staging/ambiente efetivo com E2E grafico #98. Migração de Supabase e backups #191/#340 requer grant P2 efetivo e lease; Amazon #630 exige autorizacao P2 para reconciliar 97 casos. MLRR continua pausado, nenhuma mutacao permitida.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-14 — [GPT] Recuperar atomicidade de mutacoes de eventos — P1 #210
+
+- Base SHA: 9d06a7878314d4854c095146081dac137afb10cf
+- Impacto: Corrige criacao/edicao de eventos, inscricao com recebivel, atualizacao de inscricao e registro de despesa, evitando mutacao sem trilha quando o audit falha. RPCs security invoker transacionais com bloqueio de capacidade compartilhado, sem modificar permissao existente de accounting para despesas nem alterar contrato de retorno da UI de inscricao. Recupera a PR #222 fechada sem merge e reconcilia os deltas novos de main no schema, tipos e UI.
+- Testes: RED reproduzido no main com ENOENT da migration ausente (task MCP 4c5a149b-0113-4317-9d60-482d2170b928); GREEN 4/4 testes dirigidos (task 20bd77d2-2a51-4ce3-b9c2-e3dd9ff81401) e regressao completa 770 PASS / 1 SKIP (task d0bcfdbf-088e-48ff-bc2c-6aa46baf49f3); demais gates especializados e checks oficiais ainda sujeitos a resultados reais, sem declarar CI ou deploy aprovado.
+- Evidencias: issue https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/210; historico https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/222; clone isolado gpt/solange-atomic-events-210-20261114, task MCP ba6acc5e-802a-49ed-afe1-215c00ef2ccd (falha inicial schema, corrigida em seguida).
+- Pendencias: testes unitarios, pgTAP/Database, CI oficial, merge protegido, readback SHA e release com UI grafica #98. Migracao DB/Auth/Storage da Marina #340 e backup/restore #191 requerem grant P2 e lease efetivos. Nenhuma mutacao externa ou Clinica executada.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->

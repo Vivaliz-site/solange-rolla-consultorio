@@ -169,6 +169,11 @@
     "appointment_status_atomic_audit": [
       "appointments",
       "audit"
+    ],
+    "events_atomic_audit": [
+      "audit",
+      "events",
+      "receivables"
     ]
   },
   "objects": {
@@ -263,6 +268,10 @@
     "public.create_recurrence_rule_atomic": "payables",
     "public.create_vendor_atomic": "payables",
     "public.create_expense_category_atomic": "payables",
-    "public.transition_staff_appointment_atomic": "appointments"
+    "public.transition_staff_appointment_atomic": "appointments",
+    "public.create_event_atomic": "events",
+    "public.update_event_atomic": "events",
+    "public.update_event_registration_atomic": "events",
+    "public.create_event_expense_atomic": "events"
   }
 }
