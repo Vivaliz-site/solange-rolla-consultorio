@@ -33,6 +33,19 @@ export type {
   FiscalProviderSnapshot,
 } from './application/process-fiscal-job'
 export { NationalNfseProvider } from './infrastructure/national-nfse-provider'
+export { createSignedXmlNationalNfsePayloadFactory } from './infrastructure/national-nfse-payload-factory'
+export type { SignedNationalNfseXmlFactory } from './infrastructure/national-nfse-payload-factory'
+export { createNodeMtlsNfseTransport } from './infrastructure/node-mtls-nfse-transport'
+export type { NodeMtlsNfseTransportOptions } from './infrastructure/node-mtls-nfse-transport'
+export type {
+  NationalNfseEnvironment,
+  NationalNfsePayloadFactory,
+  NationalNfsePreparedCancellation,
+  NationalNfsePreparedIssue,
+  NationalNfseTransport,
+  NationalNfseTransportRequest,
+  NationalNfseTransportResponse,
+} from './infrastructure/national-nfse-provider'
 export { evaluateFiscalReadiness } from './application/evaluate-fiscal-readiness'
 export type {
   FiscalPayer,

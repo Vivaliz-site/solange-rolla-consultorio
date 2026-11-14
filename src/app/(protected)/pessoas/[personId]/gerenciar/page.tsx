@@ -150,7 +150,7 @@ async function savePatientAction(personId: string, previous: PersonFormState, fo
   'use server'
   await requirePatientPermission('patients.update')
   const values = formValues(formData)
-  const invalid = (error: string): PersonFormState => ({ revision: previous.revision + 1, error, values })
+  const invalid = (error: string): PersonFormState => ({ revision: previous.revision + 1, error, success: false, values })
   const fiscal = fiscalAddress(values)
   if (!fiscal.ok) return invalid(fiscal.error)
   const emergency = emergencyContact(values)
@@ -186,7 +186,7 @@ async function savePatientAction(personId: string, previous: PersonFormState, fo
 
   if (error?.code === '23505') return invalid('CPF, e-mail ou telefone já pertence a outro cadastro.')
   if (error) return invalid('Não foi possível salvar o cadastro. Tente novamente.')
-  redirect(`/pessoas/${personId}?status=updated`)
+  return { revision: previous.revision + 1, error: null, success: true, values }
 }
 
 async function addRelationshipAction(formData: FormData) {
@@ -365,6 +365,7 @@ export default async function ManagePersonPage({
     <PersonForm
       mode="edit"
       initialValues={initialValues}
+      successRedirect={`/pessoas/${person.id}?status=updated`}
       action={savePatientAction.bind(null, person.id as PersonId)}
     />
 

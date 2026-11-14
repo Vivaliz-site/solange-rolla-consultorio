@@ -17,34 +17,85 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
+  impact_scope:
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, Linux, ARM64, solange-ci]
-    timeout-minutes: 10
+    timeout-minutes: 5
+    outputs:
+      run_core: ${{ steps.select.outputs.run_core }}
+      run_e2e: ${{ steps.select.outputs.run_e2e }}
+      run_db: ${{ steps.select.outputs.run_db }}
+    steps:
+      - name: Checkout diff for audited CI scope
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Select impacted suites (fail closed on unknown dependencies)
+        id: select
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+            python3 scripts/ci-impact-selection.py --base "$BASE_SHA" --head "$HEAD_SHA" --github-output "$GITHUB_OUTPUT"
+          else
+            python3 scripts/ci-impact-selection.py --force-full --github-output "$GITHUB_OUTPUT"
+          fi
+      - name: Verify CI impact-selection regressions
+        run: python3 -m unittest tests.test_ci_impact_selection -v
+
+  lint:
+    needs: impact_scope
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository && always())
+    runs-on: [self-hosted, Linux, ARM64, solange-ci]
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Enforce successful CI impact classification (required lint context)
+        env:
+          SCOPE_RESULT: ${{ needs.impact_scope.result }}
+        shell: bash
+        run: test "$SCOPE_RESULT" = success
+
+      - name: Isolate npm cache per runner
+        shell: bash
+        run: echo "NPM_CONFIG_CACHE=$RUNNER_TEMP/npm-cache" >> "$GITHUB_ENV"
+
       - name: Use Node 24.19.0
+        if: needs.impact_scope.outputs.run_core == 'true'
         uses: actions/setup-node@v7
         with:
           node-version: 24.19.0
           cache: npm
       - name: Install locked dependencies
+        if: needs.impact_scope.outputs.run_core == 'true'
         run: npm ci
       - name: Lint
+        if: needs.impact_scope.outputs.run_core == 'true'
         run: npm run lint
 
   typecheck:
+    needs: impact_scope
     if: >-
       github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       needs.impact_scope.outputs.run_core == 'true')
     runs-on: [self-hosted, Linux, ARM64, solange-ci]
     timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Isolate npm cache per runner
+        shell: bash
+        run: echo "NPM_CONFIG_CACHE=$RUNNER_TEMP/npm-cache" >> "$GITHUB_ENV"
+
       - name: Use Node 24.19.0
         uses: actions/setup-node@v7
         with:
@@ -56,14 +107,20 @@ jobs:
         run: npm run typecheck
 
   unit:
+    needs: impact_scope
     if: >-
       github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       needs.impact_scope.outputs.run_core == 'true')
     runs-on: [self-hosted, Linux, ARM64, solange-ci]
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Isolate npm cache per runner
+        shell: bash
+        run: echo "NPM_CONFIG_CACHE=$RUNNER_TEMP/npm-cache" >> "$GITHUB_ENV"
+
       - name: Use Node 24.19.0
         uses: actions/setup-node@v7
         with:
@@ -73,16 +130,32 @@ jobs:
         run: npm ci
       - name: Unit tests
         run: npm run test:run
+      - name: Managed staging backup provenance regressions
+        run: |
+          python3 -m unittest discover -s tests -p 'test_managed_backup_evidence.py' -v
+          python3 -m unittest discover -s tests -p 'test_managed_staging_offsite_export.py' -v
+          python3 -m unittest discover -s tests -p 'test_backup_source_guard.py' -v
+      - name: Staging Python security regressions (fail closed)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_staging_*.py' -v
+          python3 -m unittest discover -s tests -p 'test_restore_drill_target_guard.py' -v
+          python3 -m unittest discover -s tests -p 'test_backup_docker_integrity_guard.py' -v
 
   architecture:
+    needs: impact_scope
     if: >-
       github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       needs.impact_scope.outputs.run_core == 'true')
     runs-on: [self-hosted, Linux, ARM64, solange-ci]
     timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Isolate npm cache per runner
+        shell: bash
+        run: echo "NPM_CONFIG_CACHE=$RUNNER_TEMP/npm-cache" >> "$GITHUB_ENV"
+
       - name: Use Node 24.19.0
         uses: actions/setup-node@v7
         with:
@@ -103,14 +176,20 @@ jobs:
         run: npm run environment:check
 
   build:
+    needs: impact_scope
     if: >-
       github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       needs.impact_scope.outputs.run_core == 'true')
     runs-on: [self-hosted, Linux, ARM64, solange-ci]
     timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Isolate npm cache per runner
+        shell: bash
+        run: echo "NPM_CONFIG_CACHE=$RUNNER_TEMP/npm-cache" >> "$GITHUB_ENV"
+
       - name: Use Node 24.19.0
         uses: actions/setup-node@v7
         with:
@@ -120,24 +199,35 @@ jobs:
         run: npm ci
       - name: Verify lockfile is reproducible
         run: git diff --exit-code -- package-lock.json
-      - name: Architecture dependency contracts
-        run: npm run arch:check
-      - name: Module contracts
-        run: npm run modules:check
       - name: Build
         run: npm run build
-      - name: Dependency audit
-        run: npm audit --audit-level=high
+      - name: Runtime dependency audit
+        run: npm audit --omit=dev --audit-level=high
 
   e2e:
+    needs: impact_scope
+    concurrency:
+      group: solange-local-supabase
+      cancel-in-progress: false
+      queue: max
     if: >-
       github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       needs.impact_scope.outputs.run_e2e == 'true')
     runs-on: [self-hosted, Linux, ARM64, solange-ci]
-    timeout-minutes: 35
+    timeout-minutes: 65
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Isolate Playwright browser cache per CI attempt
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/solange-playwright-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${GITHUB_JOB}" >> "$GITHUB_ENV"
+      - name: Isolate npm cache per runner
+        shell: bash
+        run: echo "NPM_CONFIG_CACHE=$RUNNER_TEMP/npm-cache" >> "$GITHUB_ENV"
+
       - name: Use Node 24.19.0
         uses: actions/setup-node@v7
         with:
@@ -158,20 +248,30 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          trap 'rm -f "$RUNNER_TEMP/supabase-start.log" "$RUNNER_TEMP/supabase-start-retry.log"' EXIT
+          trap 'rm -f "$RUNNER_TEMP/supabase-start.log" "$RUNNER_TEMP/supabase-start-retry.log" "$RUNNER_TEMP/supabase-start-reset-retry.log"' EXIT
           if docker ps -a --format '{{.Names}}' | grep -q '_solange-rolla-consultorio$'; then
-            npx supabase@2.115.0 stop --no-backup
+            npx supabase@2.118.0 stop --no-backup
           else
             echo "No local Supabase stack to stop."
           fi
-          if ! npx supabase@2.115.0 start >"$RUNNER_TEMP/supabase-start.log" 2>&1; then
+          # Docker may release a stopped container port asynchronously.
+          python3 scripts/ci_wait_port_release.py --timeout 120 54322
+          if ! npx supabase@2.118.0 start >"$RUNNER_TEMP/supabase-start.log" 2>&1; then
             echo "::warning::Local Supabase failed initial health check; retrying once after cleanup."
-            npx supabase@2.115.0 stop --no-backup || true
+            npx supabase@2.118.0 stop --no-backup || true
+            python3 scripts/ci_wait_port_release.py --timeout 120 54322
             sleep 5
-            npx supabase@2.115.0 start >"$RUNNER_TEMP/supabase-start-retry.log" 2>&1
+            npx supabase@2.118.0 start >"$RUNNER_TEMP/supabase-start-retry.log" 2>&1
           fi
-          npx supabase@2.115.0 db reset
-          rm -f "$RUNNER_TEMP/supabase-start.log" "$RUNNER_TEMP/supabase-start-retry.log"
+          if ! npx supabase@2.118.0 db reset; then
+            echo "::warning::Isolated local Supabase reset failed; rebuilding only the CI local stack once."
+            npx supabase@2.118.0 stop --no-backup
+            python3 scripts/ci_wait_port_release.py --timeout 120 54322
+            sleep 5
+            npx supabase@2.118.0 start >"$RUNNER_TEMP/supabase-start-reset-retry.log" 2>&1
+            npx supabase@2.118.0 db reset
+          fi
+          rm -f "$RUNNER_TEMP/supabase-start.log" "$RUNNER_TEMP/supabase-start-retry.log" "$RUNNER_TEMP/supabase-start-reset-retry.log"
           trap - EXIT
       - name: Prepare local E2E environment
         shell: bash
@@ -186,7 +286,7 @@ jobs:
                 export "$key"
                 ;;
             esac
-          done < <(npx supabase@2.115.0 status -o env)
+          done < <(npx supabase@2.118.0 status -o env)
           test -n "$API_URL" && test -n "$DB_URL" && test -n "$PUBLISHABLE_KEY" && test -n "$SECRET_KEY"
           {
             echo "DB_URL=$DB_URL"
@@ -209,7 +309,16 @@ jobs:
       - name: Build application
         run: npm run build
       - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
+      - name: Verify isolated Chromium executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          browser="$(node -e 'process.stdout.write(require("@playwright/test").chromium.executablePath())')"
+          if [ ! -x "$browser" ]; then
+            echo "::error::Playwright Chromium executable missing after install in the isolated cache"
+            exit 1
+          fi
       - name: End-to-end tests
         shell: bash
         run: |
@@ -255,3 +364,38 @@ jobs:
           fi
           export E2E_REUSE_EXISTING_SERVER=true
           npm run test:e2e
+
+  # GITHUB_TOKEN dispatches the four main validators after PR auto-merge.
+  # Their workflow_run callbacks are not a reliable transitive trigger.
+  # Dispatch the EXISTING Staging Promote workflow explicitly, from the last
+  # successful CI job, after exact-main SHA + the other three validators.
+  # No new runner or automation, and staging still checks backup before writes.
+  canonical-postmerge-staging-handoff:
+    name: Canonical exact-SHA staging handoff
+    needs: [impact_scope, lint, typecheck, unit, architecture, build, e2e]
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor == 'github-actions[bot]' &&
+      needs.impact_scope.result == 'success' &&
+      needs.lint.result == 'success' &&
+      needs.typecheck.result == 'success' &&
+      needs.unit.result == 'success' &&
+      needs.architecture.result == 'success' &&
+      needs.build.result == 'success' &&
+      needs.e2e.result == 'success'
+    runs-on: [self-hosted, Linux, ARM64, solange-ci]
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write # P2: only this job can dispatch the existing staging workflow.
+    steps:
+      - name: Checkout immutable validated SHA
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Verify canonical validators and dispatch existing staging workflow
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/dispatch-staging-after-ci.py

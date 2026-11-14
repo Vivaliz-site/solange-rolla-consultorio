@@ -1,0 +1,58 @@
+{
+  "schema": "SHOPVIVALIZ_OWNER_P2_REQUEST_V1",
+  "status": "PENDENTE_DE_APROVACAO_FORMAL_NAO_EXECUTAVEL",
+  "repository": "Vivaliz-site/solange-rolla-consultorio",
+  "decision_already_recorded_in": "PR #340",
+  "issue": "#191",
+  "requested_on_utc": "2026-11-13",
+  "requesting_executor": "GPT",
+  "owner_identity_required": "shopvivaliz-human",
+  "source": {
+    "provider": "Supabase gerenciado",
+    "environment": "staging",
+    "project_ref": "hodbtssikurywwwzdkoy",
+    "region": "sa-east-1",
+    "postgres_major": 17
+  },
+  "destination": {
+    "host": "marina-a1-4c24g",
+    "stack": "Supabase self-hosted",
+    "components": [
+      "PostgreSQL 17",
+      "Auth/MFA",
+      "PostgREST",
+      "Storage",
+      "Realtime",
+      "APIs"
+    ],
+    "network_scope": "privado isolado, sem novas portas publicas"
+  },
+  "requested_p2_operation": "solange_managed_staging_private_migration_prepare_export_restore",
+  "requested_effects": [
+    "Realizar backup consistente e criptografado da fonte Supabase staging real, sem acessar a fonte legacy PG15 como origem de migracao",
+    "Exportar, transportar com integridade e restaurar exclusivamente em ambiente isolado na Marina schemas, RLS, extensoes, roles, filas, dados e metadados necessarios",
+    "Copiar e conferir quatro buckets privados e objetos de Storage e os dados de identidade/Auth/MFA estritamente necessarios, com minimizacao e custodia protegida",
+    "Validar hash, contagens sanitizadas, roles, RLS, Auth/MFA, APIs, Storage, Realtime, restore/rollback e UI E2E de staging sob SHA exato",
+    "Preparar plano de sincronizacao final e reversao sem alterar endpoints publicos"
+  ],
+  "excluded_from_this_request": [
+    "Alterar o projeto Supabase gerenciado de origem ou excluir seus dados",
+    "Trocar DNS, URLs publicas ou ambiente ativo em cutover sem autorizacao operacional P2 especifica e readback",
+    "Ativar disparos reais, pagamentos, emissao fiscal, cobranca, campanhas ou mensagens externas",
+    "Modificar projetos de producao, dados de outros tenants, gates, RBAC, MFA, branch protections, workers ou MLRR"
+  ],
+  "existing_controls_to_preserve": [
+    "revisao GitHub pelo proprietario na identidade shopvivaliz-human e HEAD exato",
+    "grant P2 executavel emitido pelo canal owner-scoped vigente",
+    "lease/fencing/locks e ownership exclusivos antes de qualquer operacao",
+    "TLS verify-full com CA oficial do Supabase e SHA256 validado",
+    "backup verificavel da fonte correta, hash e restore isolado antes de staging promove/cutover",
+    "staging E2E grafico real e rollback comprovado",
+    "LGPD e custodia de dados clinicos, MFA, Storage e segredos"
+  ],
+  "suggested_expiration_utc": "2026-11-16T23:59:00Z",
+  "owner_approval": null,
+  "effective_grant": false,
+  "no_migration_or_cutover_authorized_by_this_request": true,
+  "notes": "Solicitacao documental decorrente da ordem expressa do proprietario neste chat; nao e assinatura digital, concessao de IAM nem permissao automatica. PR #340 ja define a decisao de migrar; esta solicitacao especifica o escopo operacional P2 sem recriar a decisao. O grant DB-only de #191 nao autoriza migracao clinica."
+}

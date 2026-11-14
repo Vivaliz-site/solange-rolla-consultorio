@@ -30,6 +30,7 @@ Estado inicial obrigatório: **NO-GO**. Só marcar `[x]` com evidência anexada 
 - [ ] Usuários reais, papéis mínimos e MFA validados.
 - [ ] Treinamento, suporte, canal de reagendamento e exportação contábil testados.
 - [ ] Templates WhatsApp/e-mail revisados para não revelar conteúdo clínico.
+- [ ] WhatsApp live validado com challenge do webhook, assinatura HMAC real, deduplicação, `provider_message_id` persistido e reconciliação de `sent/delivered/read/failed` em ambiente controlado.
 - [ ] Smoke pós-deploy executado sem paciente real e sem seed em produção.
 - [ ] Nenhuma integração live, flag inadvertida ou dado sintético em produção.
 

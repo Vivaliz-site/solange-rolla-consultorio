@@ -1,4 +1,141 @@
+<!-- OWNER_ONLY_RESTRICTIONS_20261110 -->
+## Exclusividade do proprietário para criar ou agravar restrições (10/11/2026)
+
+**Determinação mais recente do proprietário, válida para TODOS os repositórios, agentes e ambientes ShopVivaliz. Esta regra substitui, neste assunto, a política de dupla aprovação de 08/11/2026.**
+
+- SOMENTE o próprio proprietário pode executar a inclusão, restauração ou ampliação de bloqueios, restrições, travas, gates, exigências de aprovação, negações de acesso ou qualquer regra/configuração que impeça, condicione ou atrase execuções, acessos, operações, comandos, automações, CI/CD, PRs, merge ou deploy.
+- NENHUM agente, bot ou automação (GPT, Claude, Codex, Gemini, Copilot, Ollama, MCP, GitHub Actions, subagentes) pode introduzir tais mudanças, nem por commit, pull request, edição direta, workflow, ruleset, código, infraestrutura, configuração, políticas de acesso ou documento de governança. A mera aprovação, revisão dupla ou autorização de uma PR NÃO transfere ao agente o poder de implementar.
+- Ao identificar uma restrição que considere necessária, o agente deve apresentar ao proprietário justificativa, impactos, riscos, alternativas, **comandos completos para execução pessoal**, validação e reversão. O agente não deve implementar, publicar ou preparar uma PR que contenha a inclusão restritiva.
+- Correções técnicas, refatorações, ajustes de observabilidade e remoções/reduções de travas indevidas seguem o fluxo normal autorizado, desde que não introduzam outra restrição no mesmo diff.
+- Esta decisão não desativa automaticamente MFA, RBAC, regras de plataforma, proteções GitHub, mecanismos de segurança exigidos por terceiros ou aprovações independentes anteriormente existentes.
+- As PRs e comunicações de agentes continuam obrigatoriamente em **português brasileiro (pt-BR)**, preservando termos técnicos, código e caminhos.
+- **Exceção única de implantação:** em 10/11/2026 o proprietário determinou expressamente que GPT aplicasse esta atualização inicial. Isso não autoriza agentes a criar futuras restrições, mesmo se aprovadas.
+<!-- /OWNER_ONLY_RESTRICTIONS_20261110 -->
+
+<!-- GEPETO_EVERY_TASK_V1 -->
+## Gepeto obrigatorio em toda tarefa
+Acione o plugin Gepeto junto com Superpowers em toda tarefa e retomada, sem nova mencao do usuario. Leia e cumpra `GEPETO-POLICY.md`. Se o runtime nao expuser o plugin, registre `GEPETO_UNAVAILABLE`, informe a limitacao e continue o trabalho autorizado sem simular participacao. Aplicar um plugin nao comprova delegacao nem revisao independente.
+<!-- /GEPETO_EVERY_TASK_V1 -->
+
+<!-- MANDATORY_AGENT_CHECKLIST_V1 -->
+## Checklist proporcional: sem bloqueio global para tarefas rotineiras
+
+**Revisao por determinacao do proprietario (06/11/2026):** foi revogada a obrigatoriedade universal de planejar e certificar um checklist a cada etapa, introduzida em 31/10/2026. A ausencia de `plan-checklist` nao pode impedir `record_progress`, retomada, correcao, teste ou conclusao de tarefas P0/P1 que ja possuam autorizacao. Um checkpoint duravel e uma proxima acao concreta continuam suficientes para registrar o trabalho; nao criar processo de aprovacao por subcomando.
+
+`scripts/agent_task_state.py` deixa de injetar automaticamente um checklist exigivel em novos checkpoints do runtime canonico. Checkpoints anteriores com lista **vazia** nao ficam presos por um plano nunca iniciado. Para trabalhos que precisam de checklist formal, o executor pode ativar `SHOPVIVALIZ_REQUIRE_AGENT_CHECKLIST=1` no escopo do fluxo e usar `plan-checklist`, `next-step`, `check-step` e `add-checklist-step`. Se ja existem etapas planejadas, suas evidencias e integridade continuam obrigatorias para encerrar; nao apagar nem certificar etapas sem comprovacao.
+
+Essa desburocratizacao nao autoriza falso sucesso nem remove controles independentes: identidade, MFA, RBAC, segredos, lease/fencing, aprovacoes humanas formalmente necessarias, branch protection, gates de operacoes comerciais, CI e validacao funcional/E2E pertinente. Nenhum controle novo deve ser imposto sem aprovacao do proprietario.
+<!-- /MANDATORY_AGENT_CHECKLIST_V1 -->
+
+<!-- AUDIT_UI_EVIDENCE_INTEGRITY_V2 -->
+## GATE EXECUTAVEL — UI, evidencia real e continuidade da Auditoria Extrema V5
+
+Antes de declarar APTO, executar `scripts/certify-audit-manifest.py` com `--evidence-root` e atender a `docs/quality/AUDIT_UI_EVIDENCE_INTEGRITY_V2.md`. A auditoria exige arquivos reais com hash recalculado, inventario de UI, log de passos/clicks e midia capturada, cada caso real stateful, RED/GREEN/regressao/reauditoria, reviewer em sessao independente e UI pos-deploy. E proibido autoatribuir APTO com flags, mock, screenshot isolado, API, CLI, SQL ou headless-only. Enquanto nao obtiver AUDIT_VERDICT=APTO da mesma release, preservar `RUNNING` no controlador de continuidade e `next_action` concreta, sem abandonar em relatorio, PR, merge, limite de turno ou falha recuperavel. Delegacao nao isenta o controlador. Antes de `CONCLUIDO`, validar E2E real e o gate `agent_task_state.py terminal`. Respeitar leases/fencing, MFA, aprovacao de destruicao/cobranca e proibir loops autonomos de IA paga. Bloqueio externo comprovado nao equivale a APTO.
+<!-- /AUDIT_UI_EVIDENCE_INTEGRITY_V2 -->
+
+<!-- EXTREME_AUDIT_UI_FIRST_HARD_GATE_V1 -->
+## GATE INEGOCIAVEL: Auditoria Extrema V5 executada pela UI real
+
+**Ordem explicita do proprietario (2026-10-13), vinculante a GPT, Claude, Gemini, Codex, subagentes, orquestradores e revisores:** toda auditoria extrema/completa/V5/aptidao de sistema que tenha UI **DEVE ser executada pelo proprio agente atraves da interface grafica real**. O auditor nao pode substituir a UI por API, terminal, SQL, inspecao de codigo, logs, mocks, healthcheck, testes unitarios, Playwright exclusivamente headless nem screenshot estatico. Esses meios sao auxiliares para investigar/reconciliar, jamais prova suficiente do funcionamento que o usuario vivencia.
+
+1. **UI primeiro, sem atalhos:** inventariar telas, jornadas, perfis, estados e casos reais; abrir a interface publicada no host/perfil autorizado; navegar, clicar, preencher, filtrar, salvar/submeter dentro das permissoes; observar resposta visual, erros e efeitos; recarregar, sair e voltar para provar persistencia. Para Amazon Seller Central, Mercado Livre e paineis externos, auditar os casos e transicoes acessiveis na UI oficial, um a um conforme escopo, sem declarar sucesso por API somente.
+2. **Evidencia obrigatoria por jornada:** registrar ambiente/URL, SHA/release quando aplicavel, sessao autorizada sem segredos, timestamp, passos efetivamente executados, capturas/trace/video, estado antes/depois, erros de console/rede, reload/revisita e reconciliacao independente dos efeitos duraveis. Screenshot isolado, abertura de pagina, resposta HTTP 200 ou teste simulado nao certificam jornada.
+3. **Auditoria inclui reparo:** ao encontrar falha corrigivel no escopo autorizado, investigar causa raiz, corrigir, prevenir recorrencia, executar testes e **repetir o mesmo fluxo pela UI real apos correcao/deploy**, com evidencia independente. Nao encerrar no diagnostico, em PR ou em teste apenas de backend.
+4. **Gate fail-closed, sem falso APTO:** qualquer fluxo com UI nao percorrido e comprovado permanece `NAO_VALIDADO_UI` / `NAO_APTO`; e proibido declarar `APTO`, `CONCLUIDO`, 100% ou verde. `browser.required=false` ou `journey.ui=false` nao podem ser usados para ocultar UI existente. Se realmente nao existir interface para o componente auditado, registrar inventario negativo de UI, justificativa e evidencias; validar os caminhos reais nao visuais pertinentes. Ausencia/falha transitoria de browser exige reparo/fallback autorizado antes de `BLOCKED_EXTERNAL`.
+5. **Seguranca:** usar browser/desktop/MCP nos hosts e perfis previstos nos runbooks, com ownership/leases, controles de autorizacao e MFA; preservar sessoes. A auditoria nao autoriza exclusao, faturamento real, modificacao irreversivel ou acesso a segredo. Quando a acao terminal nao puder ser realizada com seguranca, testar ate o limite seguro e registrar exatamente a cobertura pendente; nunca inventar sucesso.
+
+Fonte complementar: `AUDIT_POLICY.md`, `docs/quality/AUDIT_BROWSER_E2E_REAL_V1.md` e `docs/quality/AUDIT_ABSOLUTE_GATE_V1.md` do repositorio governado. **Este gate prevalece sobre instrucoes mais brandas que permitam certificar por API ou parecer do agente.**
+<!-- /EXTREME_AUDIT_UI_FIRST_HARD_GATE_V1 -->
+
+<!-- REMOTE_ACCESS_EXHAUSTION_GATE_V1 -->
+## Regra obrigatoria: esgotamento de todos os acessos remotos autorizados
+Em `Retome`, `Continue`, `Prossiga`, `Siga` e tarefas em hosts, **uma falha de ferramenta, conexao, SSH, MCP, VPN ou login nao autoriza declarar bloqueio**.
+1. Ler efetivamente `AGENTS.md`, o runbook do host e a referencia canonica `Vivaliz-site/site-shopvivaliz/docs/knowledge/host-access.md`; confirmar identidade do host, permissao e ferramenta.
+2. **Inventariar e avaliar cada rota remota realmente provisionada, apropriada e autorizada**, seguindo a prioridade canonica: ShopVivaliz Remote Control MCP/controlador; SSH privado/VCN/Tailscale e tuneis/reverse SSH documentados; GUI por `desktop_*`/bridge nativo/RustDesk; OCI Bastion/Compute Run Command/console serial/GitHub Actions **somente para bootstrap, recovery ou reparo** dentro das regras. Usar outras rotas apenas se documentadas e autorizadas.
+3. Verificar cada caminho aplicavel com evidencias atuais de disponibilidade, conexao, permissao e identidade; diagnosticar e corrigir falhas tecnicas, repetir tentativas limitadas/idempotentes e mudar de rota enquanto houver alternativa segura viavel. Nao usar GitHub como transporte normal de comandos de runtime. Navegador ShopVivaliz permanece na VM backend, nunca em Windows sem autorizacao explicita da tarefa.
+4. Persistir checkpoint nao secreto `remote_access_attempts` contendo host, canal, status (`PASS`, `FAILED`, `NOT_PROVISIONED`, `NOT_APPLICABLE`), evidencia, causa, correcao e proximo caminho. Nao afirmar que tentou um canal inexistente.
+5. Manter `RUNNING` ate recuperar acesso e concluir/validar a tarefa; `BLOCKED_EXTERNAL` so depois de **esgotar e comprovar a inviabilidade de todas as rotas adequadas, seguras e autorizadas**. Para permissao humana obrigatoria, `AWAITING_APPROVAL` com acao exata.
+Nao desabilitar MFA, RBAC, branch protection, limitacoes de acesso, controles de seguranca; nao expor credenciais, habilitar SSH publico, ou repetir indefinidamente tentativas improdutivas.
+<!-- /REMOTE_ACCESS_EXHAUSTION_GATE_V1 -->
+
+<!-- MANDATORY_AGENT_RULES_READ_GATE_V1 -->
+## Leitura efetiva de regras antes de Retome/Continue/Prossiga/Siga
+
+Cada comando curto e ordem de execucao. Antes de qualquer mutacao e no inicio de toda retomada, ler `AGENTS.md` vigente e os documentos exigidos em "Ordem de leitura", diretamente no GitHub ou clone atualizado; verificar SHA/ref e registrar checkpoint nao secreto `rules_loaded` com arquivos, SHA, data e sessao. Mera mencao de arquivos ou instrucao de chat nao prova leitura. Se a leitura falhar, registrar `RULES_NOT_LOADED` e recuperar rota autorizada antes de alteracoes; diagnosticos read-only seguros podem continuar. Carregar as regras especificas do modulo e aplicar o ciclo completo de execucao/correcao/teste/validacao, respeitando politica de branches e aprovacoes.
+<!-- /MANDATORY_AGENT_RULES_READ_GATE_V1 -->
+
+<!-- EXHAUST_AUTHORIZED_PATHS_BEFORE_BLOCKED_V1 -->
+## Bloqueio somente apos esgotamento comprovado dos caminhos viaveis
+
+**PROIBIDO declarar `BLOCKED_EXTERNAL`, `IMPEDIDO`, `INCONCLUSIVO` como encerramento ou pedir ao usuario que resolva falha tecnica enquanto existir qualquer acao segura, autorizada e tecnicamente viavel.** Antes de informar bloqueio:
+1. Confirmar estado e causa raiz com logs, codigo, checkpoints, host e testes; distinguir falha transitoria, defeito local, permissao ausente e dependencia externa.
+2. Tentar reparo local, configuracao correta, recuperacao de sessao, retry com backoff limitado e idempotencia, rota alternativa autorizada, ferramenta equivalente e recuperacao de integracao; escolher somente opcoes adequadas ao defeito real, sem repeticoes infinitas.
+3. Em CI ou PR: verificar checks e logs, corrigir causa de falha, atualizar branch e repetir checks; nunca burlar branch protection, aprovacoes obrigatorias ou status checks.
+4. Registrar para cada rota relevante: diagnostico, tentativa e resultado, evidencia, razao objetiva de inviabilidade e proxima alternativa. Se houver alternativa executavel, continuar `RUNNING` sem devolver a tarefa ao usuario.
+5. Somente apos comprovado esgotamento de **todas as alternativas razoaveis e autorizadas aplicaveis**, registrar bloqueio objetivo com checkpoint recuperavel, dependencia externa especifica e passo exato para desbloqueio.
+6. Nao executar ataques, bypass de MFA, captura de secrets, mudanca destrutiva nao autorizada, nem loops ilimitados. Falta de autorizacao obrigatoria permite `AWAITING_APPROVAL`, com escopo e aprovacao exata, sem falsas alegacoes de exaustao.
+
+Esta regra aplica-se aos comandos `Retome`, `Continue`, `Prossiga`, `Siga` e a todas as tarefas operacionais, incluindo subagentes e controladores.
+<!-- /EXHAUST_AUTHORIZED_PATHS_BEFORE_BLOCKED_V1 -->
+
+<!-- RESUME_COMMAND_HARD_GATE_V2 -->
+## GATILHO IMPERATIVO: RETOME / CONTINUE / PROSSIGA / SIGA
+
+Qualquer mensagem do proprietario contendo somente `Retome`, `Continue`, `Prossiga` ou `Siga` (independentemente de maiusculas, minusculas ou pontuacao) e uma **ordem completa de execucao**, nao pedido de status, resumo, proposta, plano ou novo prompt. Nao exigir que o usuario repita a tarefa ou estas regras.
+
+Obrigacoes de cada agente/subagente/worker:
+1. Identificar a ultima tarefa pendente no contexto, checkpoints e estado vivo; comprovar o que ja foi feito e a proxima acao executavel.
+2. Consultar AGENTS.md, regras centralizadas e runbooks do projeto; preservar sessoes, autenticacoes e progresso validos.
+3. Executar a proxima acao imediatamente, continuando em sequencia ate entrega validada enquanto houver capacidade real, autorizacao e caminho seguro. Corrigir falhas de ferramentas, CI, APIs, MCP, navegador ou infra encontradas no caminho; usar fallback autorizado e retries idempotentes.
+4. Nao encerrar por diagnostico, plano, PR, merge, timeout ou erro transitorio; executar testes, checks, integracao/deploy pertinentes e validacao funcional/E2E antes de `CONCLUIDO`.
+5. Se a sessao/limite de ferramenta impedir continuar, registrar checkpoint fiel e dependencia exata; nao prometer execucao assincrona sem controlador de continuidade comprovadamente ativo.
+6. Nunca burlar politicas de seguranca, revisao, CI, branch protection, MFA ou aprovacao necessaria. Diante de bloqueio externo real, documentar evidencias, alternativas tentadas e passo de desbloqueio; nunca marcar `CONCLUIDO` sem evidencias.
+
+A simples resposta "retomado", um relatorio de problemas ou solicitar "diga prossiga" **nao satisfaz** esta regra. Evidencia de execucao e resultado funcional sao requisitos de aceite. Esta norma complementa, sem enfraquecer, as politicas especificas do repositorio.
+<!-- /RESUME_COMMAND_HARD_GATE_V2 -->
+
+<!-- AUTONOMOUS_RESUME_TO_VALIDATED_COMPLETION_V1 -->
+## Regra obrigatoria: retomar e executar ate conclusao comprovada
+
+- Em toda tarefa operacional, recuperar o ultimo estado e checkpoint confiavel antes de agir; nao repetir operacoes ja concluidas nem descartar trabalho existente.
+- Agir autonomamente dentro das permissoes vigentes. Diagnostico, relatorio, PR aberto, tentativa de comando, timeout ou falha transitoria nao encerram a tarefa.
+- Ciclo obrigatorio: **verificar estado -> executar -> identificar falhas -> investigar causa raiz -> corrigir -> prevenir recorrencia -> testar -> retomar -> validar**.
+- Diante de erro de browser, MCP, API, CLI, rede, sessao, worker ou integracao, verificar se a acao anterior teve efeito, recuperar de forma idempotente e tentar alternativas tecnicamente viaveis, seguras e autorizadas.
+- Usar checkpoints, logs e estado persistente quando existirem. Nunca alegar trabalho em segundo plano ou retomada automatica se nao houver controlador realmente configurado e ativo.
+- Manter a tarefa `RUNNING` enquanto existir proxima acao segura e viavel no ambiente de execucao. Declarar `CONCLUIDO` apenas com evidencias frescas, testes pertinentes, regressao e validacao runtime/E2E quando aplicavel.
+- Se houver bloqueio externo objetivo ou aprovacao obrigatoria pendente, registrar causa, evidencias, tentativas, checkpoint e acao exata para retomar; nao contornar protecoes de branch, autenticacao, MFA, politicas de seguranca ou controles de aprovacao.
+- Respeitar regras especificas do repositorio, limites da sessao e escopo de autorizacao. Acao destrutiva ou irreversivel exige autorizacao adequada.
+- A regra vale para agentes, subagentes, Codex, MCP, automacoes, debugging, auditorias, deploys e retomadas; a resposta final deve distinguir entrega comprovada de bloqueio documentado.
+
+Fonte global da politica: `Vivaliz-site/site-shopvivaliz/REGRAS-AGENTES-CENTRALIZADAS.md`.
+<!-- /AUTONOMOUS_RESUME_TO_VALIDATED_COMPLETION_V1 -->
+
+<!-- AUDIT_EXTERNAL_REMEDIATION_V1 -->
+> **AUDITORIA EXTERNA TAMBÉM É CORRETIVA:** auditoria interna, externa, independente, contraditória ou feita por outro agente/revisor segue o mesmo ciclo. Auditor externo com autorização deve corrigir, testar e reauditar. Se for read-only, o relatório não encerra: os achados corrigíveis seguem para executor autorizado e permanecem em andamento até correção + revalidação independente ou bloqueio externo comprovado.
+<!-- /AUDIT_EXTERNAL_REMEDIATION_V1 -->
+
+<!-- AUDIT_REMEDIATE_VALIDATE_GLOBAL_V1 -->
+## Auditoria corretiva obrigatória
+
+- Todo pedido de auditoria significa **investigar, corrigir, prevenir e validar**; não encerrar apenas relacionando erros.
+- Todo achado material corrigível e autorizado deve ter causa raiz investigada, correção aplicada, prevenção pertinente, teste e reauditoria.
+- Relatório, recomendação, plano ou issue são estados intermediários enquanto existir ação segura executável.
+- APTO/COMPROVADO/CONCLUIDO exigem evidência fresca pós-correção e E2E real quando aplicável; sem falso-verde.
+- Pendência só é aceitável após esgotar alternativas seguras, com evidência, causa e ação exata necessária para continuidade.
+- Fonte global: `REGRAS-AGENTES-CENTRALIZADAS.md`, policy `AUDIT_REMEDIATE_VALIDATE_GLOBAL_V1`.
+<!-- /AUDIT_REMEDIATE_VALIDATE_GLOBAL_V1 -->
+
+<!-- DIAGNOSTIC_REMEDIATE_VALIDATE_GLOBAL_V1 -->
+> **DIAGNÓSTICO É CORRETIVO EM QUALQUER TAREFA:** defeito confirmado exige correção segura, prevenção pertinente, testes e validação real/E2E aplicável antes de `CONCLUIDO`. Enquanto houver ação segura executável, permanecer `RUNNING`; somente `BLOCKED_EXTERNAL` comprovado permite encerrar sem corrigir.
+<!-- /DIAGNOSTIC_REMEDIATE_VALIDATE_GLOBAL_V1 -->
 # AGENTS.md — Regras obrigatórias para agentes
+
+<!-- GLOBAL_BROWSER_VM_POLICY_V2 -->
+> **NAVEGAÇÃO GLOBAL — VM OBRIGATÓRIA; WINDOWS PROIBIDO PARA BROWSER:** qualquer navegador, automação browser, sessão gráfica, Playwright/Selenium/CDP, Chrome/Chromium/Edge/Opera, CAPTCHA, MFA, consentimento ou validação visual deve usar por padrão e obrigatoriamente a VM backend `always-free-arm-1787907847-26` (`10.0.1.38`) e o Browser Worker privado. Para intervenção humana, usar `https://shopvivaliz.com.br/admin/browser-worker.php`. **Fred-Win (`LAPTOP-NIG4IFUU`) e `DESKTOP-KOCEPSV` não são destinos nem fallback para navegação.** Não perguntar qual máquina usar para browser: use a VM. Exceção somente se o proprietário ordenar explicitamente, na tarefa atual, o uso de um Windows específico para aquela navegação. Se a VM estiver indisponível, reparar o caminho VM/OCI Bastion/túnel privado ou registrar bloqueio real; nunca migrar silenciosamente para Windows. Workflows/relays Windows de browser são legado e não devem ser executados até serem migrados. A regra não proíbe Windows para tarefas não-browser que realmente dependam dele.
+
+<!-- GLOBAL_BROWSER_SESSION_PROFILE_V1 -->
+> **SESSAO CANONICA OPENAI/CHATGPT NA VM:** para qualquer navegacao em ChatGPT/OpenAI no Browser Worker, reutilize o contexto persistente existente com `persistent=true` e `profile=ai-squad-chatgpt`. Esse e o perfil canonico que deve preservar a autenticacao ja realizada. Nao criar perfil novo, nao usar `manual` como fallback e nao migrar para Fred-Win/KOCEPSV. Se a autenticacao expirar ou exigir MFA/CAPTCHA, abra **esse mesmo perfil** pela interface autenticada `https://shopvivaliz.com.br/admin/browser-worker.php`, conclua a autenticacao nele e continue reutilizando `ai-squad-chatgpt`. Labels/TTL de sessoes de trabalho podem variar, mas o profile para ChatGPT/OpenAI deve permanecer `ai-squad-chatgpt`, salvo ordem explicita do proprietario na tarefa atual.
+
 
 
 <!-- SUPERPOWERS_EVERY_STAGE_V1 -->
@@ -274,3 +411,43 @@ Regra de continuidade: leia e cumpra `AI-TO-CLI-PROTOCOL.md`, especialmente `Con
 
 ## Continuidade obrigatoria
 Todo agente deve cumprir o `PROTOCOLO OBRIGATORIO DE CONCLUSAO DE TAREFAS` em `AI-TO-CLI-PROTOCOL.md`; erro de ferramenta ou resultado parcial nunca e motivo para parar.
+
+
+<!-- AUDIT_ABSOLUTE_V5_ENTRYPOINT -->
+## Auditoria Extrema V5 absoluta — entrada obrigatória
+Antes de qualquer auditoria completa/extrema, validação de release ou declaração de aptidão, leia e execute integralmente `AUDIT_POLICY.md`, `docs/quality/AUDIT_ABSOLUTE_GATE_V1.md`, `docs/quality/AUDIT_BROWSER_E2E_REAL_V1.md`, `docs/quality/AUDIT_APTO_REMEDIATION_LOOP_V1.md`, `docs/quality/AUDIT_AUTH_CREDENTIAL_DISCOVERY_V1.md`, `docs/quality/AUDIT_PROJECT_REQUIREMENTS_V1.md` e `docs/quality/AUDIT_PROJECT_REQUIREMENTS.json`.
+Se existir UI, o próprio agente executa E2E real no navegador gráfico no mesmo release. API/CLI/headless-only não certificam. Todo bloqueador executável deve ser corrigido, testado, deployado quando aplicável e reauditado até o certifier retornar `AUDIT_VERDICT=APTO`. Antes de declarar bloqueio por login/credencial, esgote a descoberta segura em todos os repositórios governados e fontes canônicas sem expor secrets.
+
+
+<!-- AUDIT_MERGE_ENFORCEMENT_V1 -->
+## Enforcement absoluto de merge/main
+Para auditoria/aptidão, cumpra `docs/quality/AUDIT_MERGE_ENFORCEMENT_V1.md`. O gate local deve executar `scripts/absolute-audit-governance-validate.sh`, e todo push em `main`/`master` deve passar pelo **Absolute Audit Main Guard** com prova de PR mesclado.
+
+<!-- GLOBAL_TASK_CONTINUITY_V8 -->
+## Global task continuity V8
+Toda tarefa que possa alterar código, infraestrutura, dados, CI ou deploy deve manter checkpoint durável via `python3 scripts/agent_task_state.py`. Este repositório é fixado como `repository=Vivaliz-site/solange-rolla-consultorio`. Falhas recuperáveis permanecem RUNNING e conclusão exige verificação fresca. O adapter falha fechado sem o controlador canônico injetado pelo runtime detached. Background recovery permanece Gemini-only; Codex nunca é fallback automático e continua sendo a última opção finita explícita.
+<!-- /GLOBAL_TASK_CONTINUITY_V8 -->
+
+<!-- CHECKPOINT_FIRST_V9 -->
+## Checkpoint antes da primeira etapa material
+Toda tarefa potencialmente longa ou mutável deve registrar `agent_task_state.py start`
+**antes** da primeira investigação extensa, chamada remota material, edição, mutação,
+execução longa, delegação ou espera de CI. O objetivo é eliminar a janela em que uma
+interrupção do ChatGPT ocorre antes de existir estado durável.
+
+Depois de cada avanço material, atualize `progress` com evidência e `next_action`.
+Não adie o primeiro checkpoint para depois do diagnóstico. Se o contexto atual não
+consegue alcançar o controlador canônico, falhe fechado para tarefas que dependem de
+retomada automática e use a rota operacional auditável que consiga registrar o estado.
+<!-- /CHECKPOINT_FIRST_V9 -->
+
+<!-- SHOPVIVALIZ_GRAPHICAL_SESSION_RECOVERY_V1 -->
+## Gate obrigatorio para todos os agentes: GUI ShopVivaliz e contas ChatGPT
+
+Antes de diagnosticar RustDesk, VM, autenticacao Dev/Atendimento ou classificar um login como perdido, **ler efetivamente no `main` de `Vivaliz-site/site-shopvivaliz`** o runbook `docs/knowledge/shopvivaliz-graphical-session-recovery.md`, junto de `AGENTS.md` e `docs/knowledge/browser-sessions.md`, registrando `rules_loaded` com SHAs. Esta regra aplica-se a ChatGPT, Claude, Gemini, Gepeto, subagentes e rotinas persistentes deste repositorio.
+
+Fatos observados em 2026-10-11: a area XFCE/RustDesk `fredconsole/:0` foi recuperada e mostrou Chromium ChatGPT no workspace Vivaliz com Dev e Atendimento no seletor; a tela LightDM `lightdm/:1` e login do **Ubuntu**, nao login ChatGPT; os perfis corporativos independentes permanecem no usuario `fredrdp`, display `:99`, Dev CDP9559 e Atendimento CDP9556. **Ver conta no seletor nao prova autenticacao individual**: exigir identidade exata em `/api/auth/session` no respectivo perfil antes de marcar `AUTHENTICATED`/`CONCLUIDO`. Nao reutilizar cookies entre perfis, nao destruir sessoes, nao solicitar senha ja provisionada e nao redefinir o GNOME Keyring por tentativa. Usar somente senha existente + TOTP oficial conforme preferencia atual do proprietario, respeitando etapas do provedor, MFA, lease e aprovacoes. Preservar checkpointer e monitor; `RUNNING` ate progresso real.
+<!-- /SHOPVIVALIZ_GRAPHICAL_SESSION_RECOVERY_V1 -->
+
+<!-- MARINA_MCP_AS_USER_20261112 -->
+> **MCP Marina: executar como `ubuntu` e root do backend (2026-11-12):** `marina_admin_shell` aceita o argumento opcional `as_user="ubuntu"` (sudo -n -u ubuntu, auditado por hash; exclusivo com `as_root`; qualquer outro usuario e recusado). Ativo na Marina desde a release `eb81e37c` (grant PR #3918 do `site-shopvivaliz`). No backend, o usuario `root` tambem tem os MCPs `shopvivaliz-marina-admin` e `shopvivaliz-remote-control` e a credencial do Marina MCP ja provisionada. Fonte de verdade e procedimento: `Vivaliz-site/site-shopvivaliz` em `docs/knowledge/marina-mcp-admin-agent-access.md`. Credenciais continuam so em arquivos protegidos (0600), sem expor valores.

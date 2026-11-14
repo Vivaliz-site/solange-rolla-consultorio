@@ -26,13 +26,19 @@ describe('durable backup scheduler contract', () => {
     expect(yaml).not.toContain('/mnt/fredwin-backup')
   })
 
-  it('refreshes the durable scheduler only after staging acceptance succeeds', () => {
+  it('verifies managed Supabase backup provenance before staging migrations without refreshing the legacy scheduler', () => {
     const yaml = readFileSync(workflow, 'utf8')
+    const backup = yaml.indexOf('Verify managed backup before staging database changes')
+    const migrations = yaml.indexOf('Apply forward migrations')
     const acceptance = yaml.indexOf('Real UI staging homologation')
-    const scheduler = yaml.indexOf('Refresh durable backup scheduler')
     const rollback = yaml.indexOf('Rollback staging release after failed validation')
-    expect(scheduler).toBeGreaterThan(acceptance)
-    expect(scheduler).toBeLessThan(rollback)
-    expect(yaml).toContain('ops/backup/run-demo-scheduler.sh')
+
+    expect(backup).toBeGreaterThan(-1)
+    expect(migrations).toBeGreaterThan(backup)
+    expect(acceptance).toBeGreaterThan(migrations)
+    expect(rollback).toBeGreaterThan(acceptance)
+    expect(yaml).toContain('scripts/verify-managed-backup-evidence.py --max-age-seconds 90000')
+    expect(yaml).not.toContain('Refresh durable backup scheduler')
+    expect(yaml).not.toContain('bash ops/backup/run-demo-scheduler.sh')
   })
 })

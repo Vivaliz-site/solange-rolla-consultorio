@@ -1,0 +1,40 @@
+{
+  "schema": "SHOPVIVALIZ_OWNER_PR_GRANT_V1",
+  "repository": "Vivaliz-site/solange-rolla-consultorio",
+  "pr_number": 316,
+  "resource": "github-actions:solange-staging-postmerge-handoff",
+  "principal": "github-actions[bot]",
+  "capabilities": [
+    "dispatch_existing_staging_promote_workflow"
+  ],
+  "operation": "workflow_dispatch_staging_promote_exact_sha",
+  "workflow_source": ".github/workflows/ci.yml",
+  "executable_script": "scripts/dispatch-staging-after-ci.py",
+  "target_workflow": ".github/workflows/staging-promote.yml",
+  "target_branch": "main",
+  "constrained_job": "canonical-postmerge-staging-handoff",
+  "required_actor": "github-actions[bot]",
+  "required_event": "workflow_dispatch",
+  "github_token_permission": "actions:write",
+  "grant_scope": "the handoff job only; no workflow authoring or non-staging dispatch allowed",
+  "required_prior_gates": [
+    "CI:all_required_jobs_success",
+    "Database:success",
+    "Repository Governance Gate:success",
+    "Absolute Audit Main Guard:success"
+  ],
+  "require_exact_main_sha": true,
+  "require_existing_dispatch_absent": true,
+  "require_owner_review": "shopvivaliz-human",
+  "prohibits": [
+    "hosted_runners",
+    "clinical_production_changes",
+    "bypass_managed_backup",
+    "bypass_staging_environment",
+    "bypass_lease_fencing",
+    "real_patient_data",
+    "new_workflows"
+  ],
+  "rollback": "revert PR #316 if handoff violates unique SHA or permission boundaries",
+  "expires_at_utc": "2026-12-02T23:59:00Z"
+}

@@ -17,10 +17,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  db:
+  impact_scope:
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, ARM64, solange-ci]
+    timeout-minutes: 5
+    outputs:
+      run_core: ${{ steps.select.outputs.run_core }}
+      run_e2e: ${{ steps.select.outputs.run_e2e }}
+      run_db: ${{ steps.select.outputs.run_db }}
+    steps:
+      - name: Checkout diff for audited CI scope
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Select impacted suites (fail closed on unknown dependencies)
+        id: select
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+            python3 scripts/ci-impact-selection.py --base "$BASE_SHA" --head "$HEAD_SHA" --github-output "$GITHUB_OUTPUT"
+          else
+            python3 scripts/ci-impact-selection.py --force-full --github-output "$GITHUB_OUTPUT"
+          fi
+      - name: Verify CI impact-selection regressions
+        run: python3 -m unittest tests.test_ci_impact_selection -v
+
+  db:
+    needs: impact_scope
+    concurrency:
+      group: solange-local-supabase
+      cancel-in-progress: false
+      queue: max
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       needs.impact_scope.outputs.run_db == 'true')
     runs-on: [self-hosted, Linux, ARM64, solange-ci]
     timeout-minutes: 20
     steps:
@@ -28,6 +65,10 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+
+      - name: Isolate npm cache per runner
+        shell: bash
+        run: echo "NPM_CONFIG_CACHE=$RUNNER_TEMP/npm-cache" >> "$GITHUB_ENV"
 
       - name: Use Node 24.19.0
         uses: actions/setup-node@v7
@@ -52,14 +93,38 @@ jobs:
           MIGRATION_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: npm run migrations:check
 
-      - name: Start local database
-        run: npx supabase@2.115.0 db start
-
-      - name: Rebuild database from migrations and seed
-        run: npx supabase@2.115.0 db reset
+      - name: Start and reset isolated local database
+        shell: bash
+        run: |
+          set -euo pipefail
+          trap 'rm -f "$RUNNER_TEMP/supabase-db-start.log" "$RUNNER_TEMP/supabase-db-start-retry.log"' EXIT
+          if [ -n "$(docker ps -aq --filter name=_solange-rolla-consultorio)" ]; then
+            npx supabase@2.118.0 stop --no-backup
+          else
+            echo "No local Supabase stack to stop."
+          fi
+          # Docker may release a stopped container port asynchronously.
+          python3 scripts/ci_wait_port_release.py --timeout 120 54322
+          if ! npx supabase@2.118.0 db start >"$RUNNER_TEMP/supabase-db-start.log" 2>&1; then
+            echo "::warning::Local database failed initial start; retrying once after cleanup."
+            npx supabase@2.118.0 stop --no-backup || true
+            python3 scripts/ci_wait_port_release.py --timeout 120 54322
+            sleep 5
+            npx supabase@2.118.0 db start >"$RUNNER_TEMP/supabase-db-start-retry.log" 2>&1
+          fi
+          if ! npx supabase@2.118.0 db reset; then
+            echo "::warning::Database reset failed; rebuilding local stack once."
+            npx supabase@2.118.0 stop --no-backup || true
+            python3 scripts/ci_wait_port_release.py --timeout 120 54322
+            sleep 5
+            npx supabase@2.118.0 db start
+            npx supabase@2.118.0 db reset
+          fi
+          rm -f "$RUNNER_TEMP/supabase-db-start.log" "$RUNNER_TEMP/supabase-db-start-retry.log"
+          trap - EXIT
 
       - name: Run pgTAP database tests
-        run: npx supabase@2.115.0 test db
+        run: npx supabase@2.118.0 test db
 
       - name: Ensure postgres-meta image for type verification
         run: |
@@ -78,5 +143,7 @@ jobs:
 
       - name: Verify generated database types are current
         run: |
-          npx supabase@2.115.0 gen types typescript --local > /tmp/database-types.ts
-          diff -u src/platform/supabase/types.ts /tmp/database-types.ts
+          npx supabase@2.118.0 gen types typescript --local > /tmp/database-types.ts
+          npx prettier@3.9.9 --no-semi --single-quote src/platform/supabase/types.ts > /tmp/database-types-committed.ts
+          npx prettier@3.9.9 --no-semi --single-quote /tmp/database-types.ts > /tmp/database-types-generated.ts
+          diff -u /tmp/database-types-committed.ts /tmp/database-types-generated.ts

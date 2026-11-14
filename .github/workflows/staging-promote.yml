@@ -8,7 +8,7 @@ on:
         required: true
         type: string
   workflow_run:
-    workflows: [CI, Database, Repository Governance Gate]
+    workflows: [CI, Database, Repository Governance Gate, Absolute Audit Main Guard]
     types: [completed]
 
 permissions:
@@ -48,7 +48,7 @@ jobs:
           const token = process.env.GITHUB_TOKEN
           const eventName = process.env.GITHUB_EVENT_NAME
           const output = process.env.GITHUB_OUTPUT
-          const required = ['CI', 'Database', 'Repository Governance Gate']
+          const required = ['CI', 'Database', 'Repository Governance Gate', 'Absolute Audit Main Guard']
           const headers = {
             Accept: 'application/vnd.github+json',
             Authorization: `Bearer ${token}`,
@@ -115,6 +115,7 @@ jobs:
     env:
       PROMOTE_SHA: ${{ needs.canonical-gate.outputs.sha }}
       STAGING_DEPLOY_ROOT: /home/ubuntu/solange-client-demo
+      STAGING_ACCEPTANCE_URL: http://127.0.0.1:3200
     steps:
       - name: Checkout selected revision
         uses: actions/checkout@v7
@@ -128,6 +129,10 @@ jobs:
           test -n "$PROMOTE_SHA"
           test "$(git rev-parse HEAD)" = "$PROMOTE_SHA"
           test "$(git rev-parse origin/main)" = "$PROMOTE_SHA"
+
+      - name: Isolate npm cache per runner
+        shell: bash
+        run: echo "NPM_CONFIG_CACHE=$RUNNER_TEMP/npm-cache" >> "$GITHUB_ENV"
 
       - name: Use Node 24.19.0
         uses: actions/setup-node@v7
@@ -159,6 +164,17 @@ jobs:
           npm run environment:check
           node scripts/staging-lock.mjs
 
+      - name: Verify managed backup before staging database changes
+        shell: bash
+        env:
+          SUPABASE_STAGING_PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+          SUPABASE_PRODUCTION_PROJECT_REF: ${{ secrets.SUPABASE_PRODUCTION_PROJECT_REF }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/verify-managed-backup-evidence.py --max-age-seconds 90000
+
       - name: Apply forward migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -187,6 +203,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           WHATSAPP_LIVE_ENABLED: ${{ vars.WHATSAPP_LIVE_ENABLED }}
           EMAIL_LIVE_ENABLED: ${{ vars.EMAIL_LIVE_ENABLED }}
           NFSE_LIVE_ENABLED: ${{ vars.NFSE_LIVE_ENABLED }}
@@ -213,6 +230,7 @@ jobs:
           REC_SWAPPED=0
           SHA_SWAPPED=0
           RECONCILER_SWAPPED=0
+          ENV_SNAPSHOT_TAKEN=0
 
           # docker run without --user leaves root-owned files behind (see below); a plain
           # `rm -rf` as the non-root runner user then can't remove them. Retry with sudo -n
@@ -259,8 +277,8 @@ jobs:
                 docker rename "${WEB}-previous" "$WEB" || true
                 docker start "$WEB" >/dev/null 2>&1 || true
               fi
-              if [ "$SHA_SWAPPED" -eq 1 ] && [ -f "$ROOT/state/previous-deployed-sha.txt" ]; then
-                mv "$ROOT/state/previous-deployed-sha.txt" "$ROOT/state/deployed-sha.txt"
+              if [ "$SHA_SWAPPED" -eq 1 ]; then
+                bash "$GITHUB_WORKSPACE/ops/staging/restore-deployed-sha.sh" "$ROOT"
               fi
               if [ "$RECONCILER_SWAPPED" -eq 1 ] && [ -f "$RECONCILER_PREVIOUS" ]; then
                 mv "$RECONCILER_PREVIOUS" "$ROOT/reconcile.sh"
@@ -268,7 +286,10 @@ jobs:
               else
                 rm -f "$RECONCILER_PREVIOUS"
               fi
-              rm -f "$TRANSACTION"
+              if [ "$ENV_SNAPSHOT_TAKEN" -eq 1 ]; then
+                bash "$GITHUB_WORKSPACE/ops/staging/runtime-env-transaction.sh" restore "$ROOT"
+              fi
+              rm -f "$TRANSACTION" "$ROOT/state/.deployed-sha-$PROMOTE_SHA.tmp"
             fi
             cleanup_stage
             exit "$rc"
@@ -281,9 +302,16 @@ jobs:
           test -f "$ROOT/reconcile.sh"
           rm -f "$TRANSACTION" "$RECONCILER_PREVIOUS"
           cp -p "$ROOT/reconcile.sh" "$RECONCILER_PREVIOUS"
-          mkdir -p "$ROOT/backups"
-          chmod 700 "$ROOT/backups"
-          SOLANGE_BACKUP_DEST="$ROOT/backups" scripts/backup-homologation.sh
+          # Managed staging Supabase is the source of truth; a local Docker dump
+          # is not a backup of that project's data. This metadata-only check
+          # cannot certify restore, Storage, encryption key custody or RPO/RTO.
+          python3 scripts/verify-managed-backup-evidence.py --max-age-seconds 90000
+
+          # Snapshot the existing (possibly credential-bearing) runtime env before
+          # the candidate rewrites it. Failure and post-acceptance rollback must
+          # restore this exact configuration together with the previous web.
+          bash "$GITHUB_WORKSPACE/ops/staging/runtime-env-transaction.sh" snapshot "$ROOT"
+          ENV_SNAPSHOT_TAKEN=1
 
           force_rm "$STAGE" "$PREVIOUS" "$CANDIDATE_STATE"
           mkdir -p "$STAGE" "$CANDIDATE_STATE/document" "$CANDIDATE_STATE/messaging" "$CANDIDATE_STATE/recurring"
@@ -294,13 +322,13 @@ jobs:
             --exclude '.env.production.local' \
             "$GITHUB_WORKSPACE/" "$STAGE/"
 
-          python3 - "$ROOT/demo.env" "$RUNTIME_ENV" "$PROMOTE_SHA" "$ROOT/state/current-url.txt" <<'PY'
+          python3 - "$ROOT/demo.env" "$RUNTIME_ENV" "$PROMOTE_SHA" "$STAGING_ACCEPTANCE_URL" <<'PY'
           import os, pathlib, sys
           from urllib.parse import urlsplit
           source = pathlib.Path(sys.argv[1])
           target = pathlib.Path(sys.argv[2])
           sha = sys.argv[3]
-          app_url = pathlib.Path(sys.argv[4]).read_text().strip().rstrip('/')
+          app_url = sys.argv[4].strip().rstrip('/')
           parsed_app_url = urlsplit(app_url)
           if parsed_app_url.scheme not in {'http', 'https'} or not parsed_app_url.netloc:
               raise SystemExit('current staging URL is invalid')
@@ -405,7 +433,7 @@ jobs:
               query = dict(parse_qsl(parsed.query, keep_blank_values=True))
               query['sslmode'] = 'disable'
               db_url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query), parsed.fragment))
-          result = subprocess.run(['npx', 'supabase@2.115.0', 'db', 'push', '--db-url', db_url, '--include-all', '--yes'])
+          result = subprocess.run(['npx', 'supabase@2.118.0', 'db', 'push', '--db-url', db_url, '--include-all', '--yes'])
           if result.returncode:
               print('staging migration push failed', file=sys.stderr)
               raise SystemExit(result.returncode)
@@ -459,12 +487,17 @@ jobs:
           test -s "$CANDIDATE_STATE/recurring/recurring-payables-worker.heartbeat"
           if [ -f "$ROOT/state/deployed-sha.txt" ]; then
             cp "$ROOT/state/deployed-sha.txt" "$ROOT/state/previous-deployed-sha.txt"
+            rm -f "$ROOT/state/previous-deployed-sha.absent"
           else
             rm -f "$ROOT/state/previous-deployed-sha.txt"
+            : > "$ROOT/state/previous-deployed-sha.absent"
           fi
-          printf '%s\n' "$PROMOTE_SHA" > "$ROOT/state/deployed-sha.txt"
+          # Record rollback ownership before publishing, even if the disk fills mid-write.
           SHA_SWAPPED=1
           printf '%s\n' "$PROMOTE_SHA" > "$TRANSACTION"
+          sha_tmp="$ROOT/state/.deployed-sha-$PROMOTE_SHA.tmp"
+          printf '%s\n' "$PROMOTE_SHA" > "$sha_tmp"
+          mv "$sha_tmp" "$ROOT/state/deployed-sha.txt"
 
       - name: Verify deployed SHA
         shell: bash
@@ -472,7 +505,7 @@ jobs:
           set -Eeuo pipefail
           ROOT="$STAGING_DEPLOY_ROOT"
           test "$(cat "$ROOT/state/deployed-sha.txt")" = "$PROMOTE_SHA"
-          URL=$(cat "$ROOT/state/current-url.txt")
+          URL="$STAGING_ACCEPTANCE_URL"
           actual=''
           for _ in $(seq 1 30); do
             payload=$(curl --fail --silent --show-error "$URL/api/health" || true)
@@ -500,6 +533,17 @@ jobs:
           payload=$(curl --fail --silent --show-error --retry 3 "$STAGING_APP_URL/api/health")
           test "$(printf '%s' "$payload" | jq -r '.buildSha')" = "$PROMOTE_SHA"
 
+      - name: Verify complete staging identity and public endpoint
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          # Fail closed before browser acceptance if the published tunnel serves
+          # a different release or an out-of-sync web/worker/config artifact.
+          python3 ops/staging/verify-runtime-parity.py \
+            --root "$STAGING_DEPLOY_ROOT" \
+            --expected-sha "$PROMOTE_SHA" \
+            --require-public --retries 12 --delay 5
+
       - name: Install Playwright browser for staging acceptance
         run: npx playwright install chromium
 
@@ -510,10 +554,10 @@ jobs:
           SUPABASE_STAGING_PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
         run: |
           set -Eeuo pipefail
-          python3 - "$STAGING_DEPLOY_ROOT/staging.env" "$STAGING_DEPLOY_ROOT/state/current-url.txt" "$PROMOTE_SHA" <<'PY'
+          python3 - "$STAGING_DEPLOY_ROOT/staging.env" "$STAGING_ACCEPTANCE_URL" "$PROMOTE_SHA" <<'PY'
           import os, pathlib, subprocess, sys
           env_file = pathlib.Path(sys.argv[1])
-          app_url = pathlib.Path(sys.argv[2]).read_text().strip().rstrip('/')
+          app_url = sys.argv[2].strip().rstrip('/')
           sha = sys.argv[3]
           values = {}
           for raw in env_file.read_text().splitlines():
@@ -545,12 +589,6 @@ jobs:
               check=True,
           )
           PY
-
-      - name: Refresh durable backup scheduler
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          ROOT="$GITHUB_WORKSPACE" DEMO="$STAGING_DEPLOY_ROOT" bash ops/backup/run-demo-scheduler.sh
 
       - name: Rollback staging release after failed validation
         if: failure()
@@ -603,11 +641,10 @@ jobs:
           else
             docker rm -f "$REC" >/dev/null 2>&1 || true
           fi
-          if [ -f "$ROOT/state/previous-deployed-sha.txt" ]; then
-            mv "$ROOT/state/previous-deployed-sha.txt" "$ROOT/state/deployed-sha.txt"
-          fi
+          bash "$GITHUB_WORKSPACE/ops/staging/restore-deployed-sha.sh" "$ROOT"
           force_rm "$ROOT/state/candidate-$PROMOTE_SHA"
-          rm -f "$TRANSACTION"
+          bash "$GITHUB_WORKSPACE/ops/staging/runtime-env-transaction.sh" restore "$ROOT"
+          rm -f "$TRANSACTION" "$ROOT/state/.deployed-sha-$PROMOTE_SHA.tmp"
 
       - name: Finalize promoted release
         shell: bash
@@ -617,7 +654,8 @@ jobs:
           TRANSACTION="$ROOT/state/deploy-transaction-$PROMOTE_SHA"
           docker rm -f solange-client-demo-web-previous solange-document-worker-previous solange-messaging-worker-previous solange-recurring-payables-worker-previous >/dev/null 2>&1 || true
           rm -rf "$ROOT/app-previous" 2>/dev/null || sudo -n rm -rf "$ROOT/app-previous"
-          rm -f "$ROOT/state/previous-deployed-sha.txt" "$TRANSACTION"
+          rm -f "$ROOT/state/previous-deployed-sha.txt" "$ROOT/state/previous-deployed-sha.absent" "$TRANSACTION"
           rm -f "$ROOT/reconcile-previous.sh"
+          bash "$GITHUB_WORKSPACE/ops/staging/runtime-env-transaction.sh" finalize "$ROOT"
           # Keep the promoted release state directory: the canonical workers bind-mount it
           # and need the same host path to exist after container restarts.

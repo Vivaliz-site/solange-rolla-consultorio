@@ -2,8 +2,10 @@ import { writeFile } from 'node:fs/promises'
 import { createQueue } from '../src/platform/queue/queue'
 import { createServerSupabaseQueueBackend } from '../src/platform/queue/supabase-queue'
 import { serverEnv } from '../src/platform/env/server'
+import { dispatchDocumentJobs } from '../src/modules/signatures/application/dispatch-document-jobs'
 import { renderSignedDocument } from '../src/modules/signatures/application/render-signed-document'
 import { renderSignedFormPdf } from '../src/modules/signatures/infrastructure/pdf-renderer'
+import { createSupabaseDocumentDispatchRepository } from '../src/modules/signatures/infrastructure/supabase-document-dispatch-repository'
 import { createSupabaseSignedDocumentRepository } from '../src/modules/signatures/infrastructure/supabase-signed-document-repository'
 import { createSupabaseSignedDocumentStorage } from '../src/modules/signatures/infrastructure/supabase-signed-document-storage'
 import { drainDocumentQueueOnce, processDocumentJob, runDocumentWorker } from '../src/workers/document-worker-runtime'
@@ -25,6 +27,7 @@ async function main() {
   process.on('SIGINT', () => controller.abort())
 
   const repository = createSupabaseSignedDocumentRepository()
+  const dispatchRepository = createSupabaseDocumentDispatchRepository()
   const storage = createSupabaseSignedDocumentStorage()
   const queue = createQueue<{ jobId: string }>({
     name: 'documents',
@@ -46,6 +49,7 @@ async function main() {
   log('document_worker_started', { batchSize, pollMs })
   await runDocumentWorker({
     signal: controller.signal,
+    dispatch: () => dispatchDocumentJobs({ repository: dispatchRepository, queue, limit: batchSize }),
     drain,
     pollMs,
     logger: log,

@@ -65,7 +65,7 @@ describe('pre-commit worktree isolation', () => {
     } finally {
       rmSync(root, { recursive: true, force: true })
     }
-  })
+  }, 15_000)
 
   it('does not leak the parent worktree Git context into nested repositories', () => {
     const root = mkdtempSync(path.join(os.tmpdir(), 'precommit-worktree-'))

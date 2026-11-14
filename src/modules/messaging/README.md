@@ -15,6 +15,8 @@ Contratos públicos de pessoas, agenda e plataforma de filas.
 ## Invariantes
 Uma chave de idempotência representa uma mensagem lógica; conteúdo clínico é rejeitado.
 
+Mensagens aceitas por provider real persistem o ID externo antes de concluir o job. Eventos de delivery entram por inbox deduplicada e avançam estado monotonicamente (`sent -> delivered -> read` ou `sent -> failed`); `read` e `failed` são terminais. Webhooks nunca persistem conteúdo de mensagem ou telefone bruto.
+
 ## Dados sensíveis
 Não transporta respostas de formulários, diagnóstico ou conteúdo clínico.
 

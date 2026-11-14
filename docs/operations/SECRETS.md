@@ -15,6 +15,8 @@ environment's secret manager, never in Git, issues, PRs, logs or tests.
 | `PUBLIC_ACTION_HMAC_KEY` | environment, server-only | one-time public action token signatures | coordinated rotation; keep distinct from rate-limit key |
 | `WHATSAPP_ACCESS_TOKEN` | environment, server-only | Meta WhatsApp Cloud API adapter | provider policy or leak |
 | `WHATSAPP_PHONE_NUMBER_ID` | environment, server-only | Meta WhatsApp Cloud API adapter (not secret by itself, but keep alongside the token) | when the sending number changes |
+| `WEBHOOK_SIGNING_SECRET_META_WHATSAPP` | environment, server-only | verify Meta `X-Hub-Signature-256` delivery webhooks | provider policy or leak |
+| `WEBHOOK_VERIFY_TOKEN_META_WHATSAPP` | environment, server-only | Meta webhook subscription challenge | rotate when webhook subscription changes |
 | `EMAIL_SMTP_HOST` / `EMAIL_SMTP_PORT` | environment | SMTP adapter connection | when the provider changes |
 | `EMAIL_SMTP_USER` / `EMAIL_SMTP_PASSWORD` | environment, server-only | SMTP adapter credentials | provider policy or leak |
 | `EMAIL_FROM` | environment | SMTP adapter sender address (not secret) | when the sending mailbox changes |

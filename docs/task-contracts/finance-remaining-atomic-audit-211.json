@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "status": "approved",
+  "issue": 211,
+  "migration": "20261114033000_finance_remaining_atomic_audit.sql",
+  "owners": [
+    "audit",
+    "payables",
+    "receivables"
+  ],
+  "objects": [
+    {
+      "name": "public.receivables",
+      "owner": "receivables"
+    },
+    {
+      "name": "public.receivable_adjustments",
+      "owner": "receivables"
+    },
+    {
+      "name": "public.payments",
+      "owner": "receivables"
+    },
+    {
+      "name": "public.payment_refunds",
+      "owner": "receivables"
+    },
+    {
+      "name": "public.apply_receivable_adjustment_atomic",
+      "owner": "receivables"
+    },
+    {
+      "name": "public.payables",
+      "owner": "payables"
+    },
+    {
+      "name": "public.recurrence_rules",
+      "owner": "payables"
+    },
+    {
+      "name": "public.vendors",
+      "owner": "payables"
+    },
+    {
+      "name": "public.expense_categories",
+      "owner": "payables"
+    },
+    {
+      "name": "public.create_payable_atomic",
+      "owner": "payables"
+    },
+    {
+      "name": "public.create_recurrence_rule_atomic",
+      "owner": "payables"
+    },
+    {
+      "name": "public.create_vendor_atomic",
+      "owner": "payables"
+    },
+    {
+      "name": "public.create_expense_category_atomic",
+      "owner": "payables"
+    },
+    {
+      "name": "public.audit_events",
+      "owner": "audit"
+    }
+  ]
+}

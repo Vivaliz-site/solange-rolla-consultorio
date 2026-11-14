@@ -8,11 +8,15 @@ export function DashboardView({
   openReceivablesCents,
   upcomingEvents,
   peopleCount,
+  failedMessages,
+  canViewMessaging,
 }: {
   upcomingAppointments: number
   openReceivablesCents: number
   upcomingEvents: number
   peopleCount: number
+  failedMessages: number
+  canViewMessaging: boolean
 }) {
   return <div className="dashboard-grid">
     <Link className="dashboard-card-link" href="/agenda" aria-label="Abrir agenda">
@@ -43,5 +47,14 @@ export function DashboardView({
         <strong>{peopleCount} paciente{peopleCount === 1 ? '' : 's'}</strong>
       </Card>
     </Link>
+    {canViewMessaging
+      ? <Link className="dashboard-card-link" href="/mensageria" aria-label="Abrir falhas de mensageria">
+          <Card>
+            <CardTitle>Falhas de comunicação</CardTitle>
+            <CardDescription>Envios ou entregas que precisam de acompanhamento.</CardDescription>
+            <strong>{failedMessages} falha{failedMessages === 1 ? '' : 's'}</strong>
+          </Card>
+        </Link>
+      : null}
   </div>
 }

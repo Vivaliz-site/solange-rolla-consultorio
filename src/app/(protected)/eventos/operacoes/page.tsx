@@ -3,7 +3,8 @@ import type { EventStatus } from '@/modules/events/public'
 import { authorizeStaffSession, getStaffSession } from '@/modules/identity/public'
 import { createServerSupabaseClient } from '@/platform/supabase/server'
 import { PageHeader } from '@/shared/ui/page-header'
-import { addExpenseAction, createEventAction, registerParticipantAction, updateEventAction, updateRegistrationAction } from './actions'
+import { addExpenseAction, createEventAction, updateEventAction, updateRegistrationAction } from './actions'
+import { EventRegistrationForm } from './registration-form'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -82,10 +83,7 @@ export default async function EventOperationsPage({ searchParams }: {
         <label>Capacidade <input name="capacity" type="number" min="1" defaultValue={event.capacity} required /></label>
         <label>Preço <input name="price" inputMode="decimal" defaultValue={(event.default_price_cents / 100).toFixed(2)} required /></label><button type="submit">Salvar evento</button>
       </form>
-      <form action={registerParticipantAction} className="stack-form"><input type="hidden" name="event_id" value={event.id} />
-        <label>Participante <select name="person_id" required><option value="">Selecione</option>{people.map((person) => <option key={person.id} value={person.id}>{person.preferred_name || person.civil_name}</option>)}</select></label>
-        <label>Preço da inscrição <input name="price" inputMode="decimal" defaultValue={(event.default_price_cents / 100).toFixed(2)} /></label><button type="submit" disabled={people.length === 0}>Inscrever participante</button>
-      </form>
+      <EventRegistrationForm eventId={event.id} price={(event.default_price_cents / 100).toFixed(2)} people={people.map((person) => ({id:person.id,name:person.preferred_name || person.civil_name}))} />
       <form action={addExpenseAction} className="stack-form"><input type="hidden" name="event_id" value={event.id} /><label>Despesa <input name="description" required /></label><label>Valor <input name="amount" inputMode="decimal" required /></label><label>Pago? <select name="paid"><option value="no">Não</option><option value="yes">Sim</option></select></label><button type="submit">Registrar despesa</button></form>
     </article>)}</section>
     <section><h2>Inscrições</h2>{regs.map((registration) => <form className="card stack-form" action={updateRegistrationAction} key={registration.id}>

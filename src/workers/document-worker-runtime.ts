@@ -69,16 +69,22 @@ export async function processDocumentJob(jobId: string, dependencies: {
 function defaultWait(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
     if (signal.aborted) return resolve()
-    const timer = setTimeout(resolve, ms)
-    signal.addEventListener('abort', () => {
+    const onAbort = () => {
       clearTimeout(timer)
       resolve()
-    }, { once: true })
+    }
+    const timer = setTimeout(() => {
+      // Polling pode durar indefinidamente: remover o listener quando o tempo acaba.
+      signal.removeEventListener('abort', onAbort)
+      resolve()
+    }, ms)
+    signal.addEventListener('abort', onAbort, { once: true })
   })
 }
 
 export async function runDocumentWorker(options: {
   signal: AbortSignal
+  dispatch?: () => Promise<{ claimed: number; dispatched: number } | void>
   drain: () => Promise<number>
   pollMs?: number
   wait?: (ms: number, signal: AbortSignal) => Promise<void>
@@ -88,10 +94,21 @@ export async function runDocumentWorker(options: {
   const pollMs = Math.max(250, options.pollMs ?? 2000)
   const wait = options.wait ?? defaultWait
   while (!options.signal.aborted) {
+    let dispatchOk = true
+    try {
+      const result = await options.dispatch?.()
+      // Released queue-send failures return counts instead of rejecting.
+      if (result && result.dispatched !== result.claimed) {
+        throw new Error('DOCUMENT_DISPATCH_INCOMPLETE')
+      }
+    } catch (error) {
+      dispatchOk = false
+      options.logger?.('document_worker_dispatch_failed', { code: safeErrorCode(error) })
+    }
     try {
       const completed = await options.drain()
-      await options.heartbeat?.()
-      options.logger?.('document_worker_poll_ok', { completed })
+      if (dispatchOk) await options.heartbeat?.()
+      options.logger?.('document_worker_poll_ok', { completed, dispatchOk })
     } catch (error) {
       options.logger?.('document_worker_poll_failed', { code: safeErrorCode(error) })
     }

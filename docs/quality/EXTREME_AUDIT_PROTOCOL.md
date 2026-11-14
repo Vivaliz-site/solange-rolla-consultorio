@@ -1,95 +1,123 @@
 # Protocolo Universal de Auditoria Extrema — Zero Blind Spots
 
 ## Missão
-Atue sob três lentes obrigatórias: **Auditor** (conformidade, segurança, integridade e regras), **Consultor** (risco, negócio, UX, custo e produtividade) e **Operador** (reprodução, correção, testes e validação real). As lentes não devem repetir texto: cada uma responde por uma dimensão distinta do mesmo achado.
+Atue sob três lentes obrigatórias: **Auditor** (conformidade, segurança, integridade e regras), **Consultor** (risco, negócio, UX, custo e produtividade) e **Operador** (reprodução, correção, testes e validação real). O objetivo é: **MAPEAR → IMPACTAR → QUESTIONAR → REPRODUZIR → PROVAR → CLASSIFICAR → CORRIGIR → BUSCAR EQUIVALENTES → RECONCILIAR DADOS → TESTAR → DEPLOYAR → OBSERVAR → RECONCILIAR EFEITOS → REGREDIR → REAUDITAR → AUTO-TESTAR A AUDITORIA → META-AUDITAR**.
 
-O objetivo não é gerar um relatório; é executar, conforme acessos e segurança permitirem: **MAPEAR → QUESTIONAR → REPRODUZIR → PROVAR → CORRIGIR → TESTAR → REGREDIR → REAUDITAR**.
+## Regras fundamentais
+- Não presuma que documentação, nome de função, teste verde, HTTP 200, botão visível, migration, worker configurado ou serviço `active` provam comportamento correto.
+- Classifique evidência como `COMPROVADO`, `FORTE EVIDÊNCIA`, `HIPÓTESE A VALIDAR` ou `NÃO VALIDADO`.
+- Tente refutar achados relevantes antes de registrá-los e tente quebrar áreas consideradas corretas.
+- Este protocolo é piso mínimo, nunca teto.
+- Execute também `AUDIT_RUNTIME_PARITY_V1`, `AUDIT_UNIVERSAL_COVERAGE_V1`, `ARCHITECTURE_DEPLOY_AUDIT_V1`, `AUDIT_BROWSER_E2E_REAL_V1` quando houver UI, `AUDIT_JOURNEY_INVENTORY_V1`, `AUDIT_CLEAN_ROOM_REALITY_V1`, `AUDIT_HARDENING_MAX_V1`, `AUDIT_APTO_REMEDIATION_LOOP_V1`, `AUDIT_ESCAPE_INVALIDATION_V1`, `AUDIT_ABSOLUTE_GATE_V1`, `AUDIT_AUTH_CREDENTIAL_DISCOVERY_V1`, `AUDIT_PROJECT_REQUIREMENTS_V1` + o `AUDIT_PROJECT_REQUIREMENTS.json` local, o overlay do projeto e `AUDIT_SELF_TEST_V1` quando aplicável.
+- A taxonomia de erros nunca é lista fechada: toda auditoria deve reservar investigação exploratória para falhas não previstas.
 
-## 0. Regras epistemológicas
-- Não presuma que documentação, nome de função, teste verde, HTTP 200, botão visível, migration existente, worker configurado ou serviço `active` provam comportamento correto.
-- Todo achado é `COMPROVADO`, `FORTE EVIDÊNCIA`, `HIPÓTESE A VALIDAR` ou `NÃO VALIDADO`.
-- Tente refutar achados relevantes antes de registrá-los: procure proteção equivalente em outro módulo, constraint, configuração, middleware, worker, feature flag ou fluxo compensatório.
-- Para toda área considerada correta, tente construir pelo menos um cenário capaz de quebrá-la.
-- Esta lista é requisito mínimo e nunca limita novas classes de risco encontradas durante a auditoria.
+## Reconstrução do sistema real
+Compare **documentação × código × testes × schema/migrations × dados × configuração × CI/CD × infraestrutura × processos ativos × produção × histórico Git**. Mapeie entidades, estados, transições, APIs, telas, jobs, filas, cron/schedulers, webhooks, integrações, storage, caches, feature flags, scripts, backups, observabilidade e efeitos externos. Procure config drift, hotfixes, serviços legados e jobs duplicados fora do fluxo versionado.
 
-## 1. Reconstrução do sistema real
-Compare, quando disponíveis: **documentação × código × testes × schema/migrations × dados × configuração × CI/CD × infraestrutura × processos ativos × produção × histórico Git**.
-Mapeie entidades, estados, transições, APIs, telas, comandos, jobs, filas, schedulers, cron, webhooks, integrações, storage, caches, feature flags, scripts operacionais, backups, observabilidade e efeitos externos.
-Não presuma que o repositório contém toda a realidade: procure configuração manual, serviço legado, script fora do fluxo principal, hotfix, job duplicado e drift entre ambiente declarado e executado.
+## Mapa de impacto obrigatório
+Antes de escolher testes, derive `mudança → dependentes → fluxos → dados → integrações → riscos → evidências`. Inclua dependências indiretas, configuração, feature flags, schema, cache, filas, consumidores, observabilidade, deploy e rollback. Use `AUDIT_CHANGE_IMPACT_V1` como gate: dependente material não mapeado é ponto cego.
 
-## 2. Fluxos ponta a ponta e data lineage
-Para cada entidade/fluxo crítico trace `entrada → validação → persistência → processamento → decisão → efeito externo → confirmação → reconciliação → encerramento`.
-Determine produtor, consumidor, condição, persistência, idempotência, timeout, retry, backoff, deduplicação, compensação, observabilidade, responsável, estado de falha e recuperação. Rastreie dados críticos de origem até o efeito.
+## Fluxos, lineage e espaço negativo
+Para cada fluxo crítico trace `entrada → validação → persistência → processamento → decisão → efeito externo → confirmação → reconciliação → encerramento`. Identifique produtor, consumidor, idempotência, timeout, retry/backoff, deduplicação, compensação, observabilidade, owner, falha e recuperação.
+Procure também o que deveria existir e não existe: produtor sem consumidor, consumidor sem produtor, estado sem saída/timeout/owner, fila sem worker, evento sem listener, botão sem backend, endpoint sem caller, job não agendado, dado nunca reconciliado, falha nunca tratada e ausência de watchdog/dead-letter/rollback/cleanup/alerta. Pergunte sempre: quem detecta quando algo esperado não acontece e quem corrige?
 
-## 3. Espaço negativo
-Procure produtor sem consumidor, consumidor sem produtor, estado sem saída/timeout/owner, fila sem worker, evento sem listener, botão sem backend, endpoint sem caller, job não agendado, dado nunca reconciliado, falha nunca tratada e ausência de watchdog/retry/dead-letter/reconciliação/rollback/compensação/cleanup/alerta/recuperação. Para cada fluxo pergunte: quem detecta quando algo esperado não acontece e quem corrige?
+## Invariantes e máquina de estados
+Derive propriedades que jamais podem ser violadas e monte `Invariante | Garantia técnica | Teste | Como quebrar | Evidência`. Tente quebrá-las. Audite Create/Read/Update/Delete/Archive/Restore/Cancel/Reopen/Retry/Undo conforme aplicável. Mapeie `estado atual → evento → condição → próximo estado`; procure estados inalcançáveis, eternos, sem saída, saltos indevidos, reversões ausentes e registros fantasmas presos.
 
-## 4. Invariantes
-Derive propriedades que jamais podem ser violadas e crie matriz `Invariante | Garantia técnica | Teste | Como quebrar | Evidência`. Tente deliberadamente violar cada uma.
+## Pilares técnicos obrigatórios quando aplicáveis
+Audite: lógica/matemática/moeda/datas/timezone; concorrência/idempotência; autenticação/autorização/RBAC/IDOR/tenant isolation/OWASP; privacidade/LGPD; constraints/FKs/índices/transações/migrations; integração entre módulos; resiliência a timeout/429/5xx/restart/processamento parcial; UX/acessibilidade/prevenção de erro; performance/capacidade/saturação; logs/métricas/tracing/alertas/healthchecks; CI/CD/rollback/config drift/feature flags; dependências/lockfiles/imagens/actions/licenças/supply chain.
 
-## 5. Ciclo de vida e máquina de estados
-Audite Create/Read/Update/Delete/Archive/Restore/Cancel/Reopen/Retry/Undo conforme aplicável. Mapeie `estado atual → evento → condição → próximo estado` e detecte estados inalcançáveis, eternos, sem saída, saltos indevidos, reversões ausentes e registros fantasmas presos.
+Além desses pilares, execute a taxonomia completa de `AUDIT_ERROR_TAXONOMY_V1` em `AUDIT_UNIVERSAL_COVERAGE_V1.md`. Cada classe deve terminar como `COMPROVADO`, `N/A justificado` ou `NÃO VALIDADO`; classe material `NÃO VALIDADO` bloqueia `APTO`.
 
-## 5A. Matriz obrigatória de transições e compatibilidade histórica
-Para cada entidade persistida ou fluxo stateful, construa uma matriz explícita cruzando **operação/transição × classe de dado histórico × superfície × pós-condição**. A cobertura mínima deve contemplar, quando existirem:
+## Tempo, ordem, dados e compatibilidade
+Inclua explicitamente **classe de dado histórico** e a matriz de **dados novos, legados, migrados**: dados antigos, parcialmente migrados, anteriores a invariantes atuais, registros criados por versões legadas e entidades que atravessaram mudanças de schema/regra devem ser exercitados quando materiais. Para operações persistidas, cubra também **no-op update**, mutação real, transições permitidas e confirmação após **reload/reopen**. Um fluxo validado apenas com registros novos não certifica histórico existente.
 
-- operações: create, read, no-op update, update de campo único, update combinado, cancel, reopen, archive, restore, retry, undo e transições específicas do domínio;
-- proveniência: **dados novos, legados, migrados**/backfilled, parcialmente preenchidos/null-edge, snapshots/políticas/eventos versionados, estados intermediários e terminais;
-- superfície: a mutação de rotina usada por operador/usuário deve ser executada pela UI real; API, action direta, SQL e scripts são apenas apoio para fixture, diagnóstico ou verificação;
-- pós-condição: persistência, audit/history, dependências, efeitos externos, idempotência/retry e confirmação após **reload/reopen**.
+Teste T-1/T/T+1 para prazos, timezone, viradas de calendário, eventos duplicados/atrasados/fora de ordem e versões diferentes de schema/API/eventos/backend/frontend/worker. Execute também `AUDIT_BOUNDARY_MATRIX_V1`: -1/0/1, vazio/um/muitos, mínimo/máximo, exatamente no limite, imediatamente antes/depois, precisão/rounding e Unicode/encoding quando materiais.
 
-Antes de considerar uma área coberta, inventarie no ambiente alvo as distribuições reais de estado, versão, nullabilidade e formato histórico. Cada **classe de dado histórico** material encontrada deve ter representante testado ou ser registrada explicitamente como `NÃO VALIDADO`. Happy path sobre seed novo não certifica compatibilidade com registros antigos.
+Quando autorizado, investigue dados reais: duplicidades, órfãos, estados impossíveis, nulls inesperados, divergências, timestamps incoerentes, filas acumuladas e entidades que entram no funil mas desaparecem antes do final. Código correto não prova banco íntegro.
 
-Qualquer leitor/editor de JSON persistido, snapshot de política, payload de evento ou estrutura versionada deve provar migração/backfill completo ou normalização explícita das versões históricas suportadas. Cast de tipo não é garantia técnica.
+Para fluxo persistido, prove `AUDIT_DATA_RECONCILIATION_V1` e `AUDIT_ORPHAN_DETECTION_V1`: origem deve reconciliar com destinos/estados finais, e toda diferença deve ser explicada por uma categoria válida e observável.
 
-Para fluxo mutável pela UI, clique/salvamento, redirect, HTTP 200 ou ausência de exceção não bastam: recarregue/reabra a tela e verifique independentemente que o estado persistiu e que histórico/auditoria/efeitos esperados ocorreram. Uma tela genérica `This page couldn’t load`, 5xx, blank state ou error boundary em mutação operacional é achado material e bloqueia `APTO` até regressão comprovada.
-
-## 6. Pilares técnicos mínimos
-Audite quando aplicável: lógica/matemática/moeda/datas/timezone; concorrência/idempotência; autenticação/autorização/RBAC/IDOR/tenant isolation/OWASP; privacidade/LGPD; constraints/FKs/índices/transações/migrations; integração entre módulos; resiliência a timeout/429/5xx/restart/processamento parcial; UX/acessibilidade/prevenção de erro; performance/saturação; observabilidade; CI/CD/rollback/config drift/feature flags; supply chain/dependências/imagens/actions/licenças.
-
-## 7. Tempo, ordem e compatibilidade
-Teste T-1/T/T+1 para prazos; timezone; viradas de calendário; eventos duplicados, atrasados ou fora de ordem; versões diferentes de schema/API/eventos/backend/frontend/worker.
-
-## 8. Dados reais e leakage operacional
-Quando autorizado, procure duplicidades, órfãos, estados impossíveis, registros antigos demais, nulls inesperados, totais divergentes, timestamps incoerentes, filas acumuladas e entidades que entram no funil mas desaparecem antes do estado final. Código correto não prova banco íntegro.
-
-## 9. Integrações e efeitos externos
+## Integrações e efeitos externos
 Valide `input → transformação → request → aceite → persistência → confirmação do efeito → reconciliação`. Não confunda request enviada, HTTP 200, aceita, processada e efeito efetivamente realizado. Verifique auth/expiração, paginação, rate limit, timeout, retry, idempotência, webhook perdido/duplicado, mudança de schema e reconciliação independente.
 
-## 10. Testar os próprios testes
-Pergunte: **se o código estivesse errado, esta suíte perceberia?** Use quando apropriado property-based testing, contract testing, mutation testing, fuzzing e fault injection. Procure asserts inúteis, mocks excessivos, testes ignorados/flaky e failure paths não cobertos.
+Execute `AUDIT_EXTERNAL_ACTION_SAFETY_V1` para efeitos financeiros/irreversíveis e `AUDIT_SILENT_FAILURE_V1` para casos em que tudo parece verde, mas o efeito não ocorreu, ficou stale, incompleto ou incorreto.
 
-## 11. Capacidade, deterioração e time bombs
-Determine o primeiro recurso a saturar: CPU, RAM, disco, pool, fila, quota, rate limit, storage ou dependência externa. Procure deterioração silenciosa e expiração futura de certificados, tokens, domínios, credenciais, secrets, licenças e limites de fornecedor.
+## Testar os próprios testes
+Pergunte: **se o código estivesse errado, esta suíte perceberia?** Use, quando apropriado, property-based testing, contract testing, mutation testing, fuzzing e fault injection. Procure asserts inúteis, mocks excessivos, testes ignorados/flaky, retries que mascaram defeitos, `continue-on-error`, exit codes ignorados e failure paths não cobertos.
 
-## 12. Backup, restore e desastre
-Backup só é comprovado quando `backup → integridade → retenção → restore → validação` é demonstrável. Registre RPO/RTO quando aplicável. Backup nunca restaurado = `RECUPERAÇÃO NÃO COMPROVADA`.
+Teste flaky ou falso-verde não conta como evidência. Aplique `AUDIT_FLAKY_FALSE_GREEN_V1` e, quando a governança/gate tiver mudado ou estiver sendo certificado, execute `AUDIT_SELF_TEST_V1.md` com defeitos deliberadamente injetados.
 
-## 13. Proveniência da produção
-Prove `commit → build → artefato → release → deploy → processo ativo`. Registre SHA/versão/build/digest/release quando acessível. Sem prova, marque `VERSÃO EM PRODUÇÃO NÃO COMPROVADA`.
+## Capacidade, time bombs, backup e produção
+Determine o primeiro recurso a saturar: CPU, RAM, disco, pool, fila, quota, rate limit, storage ou dependência. Procure deterioração silenciosa e expiração futura de certificados, tokens, domínios, credenciais, secrets e licenças. Backup só é comprovado por `backup → integridade → retenção → restore → validação`; sem restore, marque `RECUPERAÇÃO NÃO COMPROVADA`. Em produção prove `commit → build → artefato → release → deploy → processo ativo`; sem prova, marque `VERSÃO EM PRODUÇÃO NÃO COMPROVADA`.
 
-## 14. Segurança adversarial e abuso
-Avalie abuso de funcionalidade legítima, escalada horizontal/vertical, manipulação de IDs/tenant/owner, mass assignment, fraude interna/externa e ameaça por usuário autenticado. Construa matriz de autorização por papel/recurso/ação.
+## Segurança adversarial, risco e custo
+Avalie abuso de funcionalidade legítima, escalada horizontal/vertical, manipulação de IDs/tenant/owner, mass assignment, fraude interna/externa e matriz de autorização. Priorize perda financeira, cobrança/reembolso duplicado, prazo perdido, ação externa indevida, dado não reconciliado, indisponibilidade, retrabalho e desperdício comprovado de polling/API/storage/logs/recursos.
 
-## 15. Risco financeiro, operacional e custo
-Priorize perda de receita, cobrança/reembolso duplicado, prazo perdido, ação externa indevida, dado não reconciliado, indisponibilidade, retrabalho ou decisão com dado obsoleto. Avalie desperdício comprovado de polling/API/storage/logs/recursos.
+Compare baseline de latência, throughput, memória, CPU, disco, filas, taxa de erro, custo e chamadas externas quando material. Deterioração relevante é achado mesmo que o happy path continue funcionando.
 
-## 16. Classificação do achado
-Registre ID, severidade P0–P4, probabilidade, blast radius, detectabilidade, confiança/evidência, arquivo/componente, visão Auditor, Consultor e Operador, reprodução, causa raiz, correção, teste antes/depois e regressão. P0 = perda/corrupção/segurança crítica/indisponibilidade grave atual; P1 = alto impacto provável; P2 = falha relevante contornável; P3 = impacto limitado/dívida/UX/observabilidade; P4 = melhoria sem defeito atual.
+## Formato dos achados
+Registre ID, severidade `P0–P4`, probabilidade, blast radius, detectabilidade, confiança/evidência, arquivo/componente, visão Auditor, Consultor e Operador, reprodução, causa raiz, correção, teste antes/depois e risco de regressão. P0 = perda/corrupção/segurança crítica/indisponibilidade grave atual; P1 = alto impacto provável; P2 = falha relevante contornável; P3 = impacto limitado/dívida/UX/observabilidade; P4 = melhoria sem defeito ativo.
 
-## 17. Segurança da correção
-Classifique `SAFE`, `REVIEW`, `MIGRATION` ou `DESTRUCTIVE`. Mudança destrutiva exige autorização explícita. Pergunte se cada achado é isolado ou classe sistêmica e faça busca global por equivalentes.
+Além da severidade, classifique a natureza como `DEFECT`, `IMPROVEMENT_REQUIRED` ou `IMPROVEMENT_OPTIONAL`. Uma melhoria é `REQUIRED` quando fecha risco material de segurança, integridade, recuperação, observabilidade, idempotência, prevenção de recorrência ou operação crítica; caso contrário pode ser `OPTIONAL`.
 
-## 18. Reauditoria contraditória
-Após correções, faça regressão e nova rodada tentando provar que as conclusões estão erradas. Não reutilize automaticamente as premissas da primeira passagem.
+Antes de alterar, classifique a correção como `SAFE`, `REVIEW`, `MIGRATION` ou `DESTRUCTIVE`; ação destrutiva exige autorização explícita.
 
-## 19. Matriz de cobertura
-Para cada área pertinente registre `Auditada | Problemas | Corrigidos | Pendentes | Evidência`: backend, frontend, banco, APIs, jobs, queues, cron, webhooks, integrações, segurança, permissões, testes, CI/CD, infraestrutura, logs, monitoramento, backup/restore, UX, performance, dependências e documentação. Área não auditada deve aparecer com motivo.
+## Remediação obrigatória e zero pendência crítica
+Auditoria extrema não é um relatório de defeitos. Todo achado `SAFE` P0–P2 deve ser corrigido durante a própria auditoria, com reprodução antes, correção, teste depois, regressão e reauditoria. Achado `REVIEW/MIGRATION/DESTRUCTIVE` precisa de plano executável, owner, pré-condições, risco e evidência concreta do bloqueio.
 
-Além disso, para cada fluxo persistido registre `Workflow | Classe de dado | Estado inicial | Operação | UI path | Estado esperado | Estado persistido | Audit/history | Side effects | Reload/reopen | Resultado | Evidência`.
+`NÃO APTO` é estado intermediário enquanto houver correção executável. O controlador deve aplicar `AUDIT_APTO_REMEDIATION_LOOP_V1` e continuar: reproduzir → corrigir → testar → buscar equivalentes → regredir → deployar quando aplicável → executar E2E real → reconciliar → reauditar. Delegação não transfere ownership e falha/limite de subagente exige takeover.
 
-## 20. Gate Final de Completude
-Não use “100%”, “pronto” ou “apto” apenas por build/test/health verde. Valide, conforme aplicável: código, dados, fluxos happy/edge/failure/retry/idempotência, integrações, operação, segurança, produção e recuperação. Veredito: `NÃO APTO`, `APTO COM RESSALVAS` ou `APTO`, com **confiança 0–100%**, **risco residual** e **dívida de evidência**. Nunca use 100% de confiança com área crítica não validada.
+No modo absoluto, `APTO` exige `P0=P1=P2=P3=0`, zero `DEFECT` aberto, zero `IMPROVEMENT_REQUIRED` aberto, nenhuma área material `NÃO VALIDADO`, zero `AUDIT_ESCAPE` pendente, zero bloqueador executável, zero superfície/jornada/controle material não mapeado ou não testado e zero dívida material de evidência. `APTO COM RESSALVAS` é proibido; o único encerramento alternativo é `BLOCKED_EXTERNAL` com prova objetiva de bloqueio externo real.
 
-## 21. Meta-auditoria final
-Antes de encerrar, investigue: que classe de falha foi esquecida? quais conclusões dependem de suposição? se o relatório estiver errado, onde? o que ainda pode causar perda financeira, perda de dados, efeito externo incorreto, indisponibilidade ou trabalho manual evitável? Depois atualize `docs/quality/AUDIT_STATUS.md` com o SHA/release coberto.
+## Busca sistêmica por equivalentes
+Para cada achado confirmado, execute e registre `Achado → Classe de falha → Busca global → Ocorrências equivalentes → Correções → Testes → Reauditoria`. Corrigir somente o exemplo que revelou o defeito é insuficiente quando a classe puder se repetir em outras rotas, entidades, tenants, workers, integrações ou estados históricos.
+
+## Observabilidade comprovada
+Healthcheck, log, alerta, watchdog, dead-letter e dashboard só contam como proteção quando a auditoria prova que detectam a classe de falha relevante. Quando seguro, faça fault injection controlada e valide detecção, diagnóstico, alerta/encaminhamento e recuperação. Se não puder injetar a falha, registre dívida de evidência e use a prova operacional equivalente mais forte disponível.
+
+## Pós-deploy: observar e reconciliar
+Quando houver publicação, valide `commit → build → artefato → release → deploy → processo ativo → operação real → observação → efeito durável → reconciliação`. Para workers, filas, schedulers, webhooks e integrações críticas, prove ao menos uma execução produção-equivalente no release certificado por ciclo natural ou disparo controlado seguro. Erro assíncrono posterior invalida o veredito incompatível.
+
+## Rollback, restore e retomada
+Para mudança crítica, prove compatibilidade de recuperação entre aplicação, schema, eventos, filas, caches e dados. Quando aplicável, ensaie `deploy → mutação → rollback/restore → validação → retomada` em ambiente seguro apropriado. Não faça ação destrutiva em produção apenas para satisfazer o protocolo.
+
+## Legado, duplicidade e concorrência operacional
+Inventarie serviços, processos, timers, cron, schedulers, workflows, runners, scripts, consumers, bridges e automações que possam cumprir responsabilidade equivalente. Procure legado ainda ativo, jobs duplicados, polling redundante, concorrência, consumers órfãos, hotfixes fora do fluxo versionado e caminhos alternativos que ainda produzam efeitos.
+
+## Caça a unknown unknowns
+Depois da cobertura dirigida, faça rodada adversarial sem roteiro fechado usando técnicas adequadas ao domínio: fuzzing, property-based, mutation testing, fault injection/chaos controlado, sequência inesperada de ações, replay, análise de outliers, comparação diferencial/metamórfica e investigação do espaço negativo. O objetivo é descobrir uma classe de falha que a própria taxonomia ainda não nomeou.
+
+Nova classe descoberta deve virar teste/regra/registro para que deixe de ser desconhecida na auditoria seguinte.
+
+## Reauditoria contraditória e cobertura
+Após correções, execute regressão e nova rodada tentando provar que as conclusões estão erradas. Registre matriz `Auditada | Problemas | Corrigidos | Pendentes | Evidência` para backend, frontend, banco, APIs, jobs, queues, cron, webhooks, integrações, segurança, permissões, testes, CI/CD, infraestrutura, logs, monitoramento, backup/restore, UX, performance, dependências e documentação. Área não auditada deve aparecer com motivo.
+
+## Auditoria de arquitetura, código e deploy
+Execute `ARCHITECTURE_DEPLOY_AUDIT_V1`. Reconstrua limites entre projetos, ownership de dados, runners, workflows, dependências e release path; meça o caminho crítico de CI/deploy; procure serialização desnecessária, reinstalação de dependências no host, provisionamento/restart sem impacto, workflow sprawl, pontos únicos de falha, contratos cross-repo implícitos, hotspots e config drift.
+
+Melhoria segura que reduza fila/risco sem enfraquecer gates deve ser aplicada na própria auditoria e medida antes/depois. Otimização que remove evidência ou cobertura crítica é regressão, não melhoria.
+
+## Browser E2E, inventário e realidade operacional
+Para todo sistema com UI, execute `AUDIT_BROWSER_E2E_REAL_V1`: o próprio agente percorre no navegador real a jornada completa do usuário, no release publicado, com reload/revisita, persistência, console/rede e evidência visual. API/CLI/headless-only/screenshot estático são apoio, não certificação final.
+
+Antes disso, execute `AUDIT_JOURNEY_INVENTORY_V1` para descobrir rotas, controles, formulários, estados, roles, tenants, feature flags e caminhos legados. `UNMAPPED_SURFACE` ou controle/jornada material `UNTESTED` bloqueia `APTO`.
+
+Execute também `AUDIT_CLEAN_ROOM_REALITY_V1` para sessão limpa, cache/PWA, auth expirada, deep-link/back/refresh, mobile/desktop, browser alternativo quando material, concorrência, falha parcial, cold start, tempo e soak/leak.
+
+## Auth e invariantes locais
+Antes de classificar login/OAuth/sessão/credencial como `BLOCKED_EXTERNAL`, execute `AUDIT_AUTH_CREDENTIAL_DISCOVERY_V1` em 100% dos repositórios governados e nas fontes/sessões/transportes canônicos referenciados por eles, sem expor secrets.
+
+Carregue `docs/quality/AUDIT_PROJECT_REQUIREMENTS.json` e comprove todos os invariantes locais. Omissão de requisito do domínio bloqueia `APTO`; requisitos `provider_chat` exigem respostas reais e visíveis dos providers declarados no mesmo ciclo.
+## Enforcement de merge e pós-push
+Execute `AUDIT_MERGE_ENFORCEMENT_V1`: o `governance-gate` deve executar o bridge absoluto e todo push em `main`/`master` deve ser revalidado pelo Main Guard com proveniência de PR mesclado. Workflow existente sem integração com o bridge é cobertura incompleta de governança.
+
+## Certificação absoluta e integridade de evidência
+Aplique `AUDIT_HARDENING_MAX_V1` e `AUDIT_ABSOLUTE_GATE_V1`: fingerprint de release/config/schema/providers; dupla confirmação UI + oracle independente; matriz role/tenant/estado; chaos/recovery seguro; settlement assíncrono; hashes SHA-256 dos artefatos; invalidação automática por mudança material; revisor contraditório distinto; nenhuma autoatestação sem referência de evidência.
+## Gate Final de Completude
+Não use “100%”, “pronto” ou “apto” apenas por build/test/health verde. Antes do veredito, confirme o `AUDIT_DEFINITION_OF_DONE_V1` e o `AUDIT_UNIVERSAL_COVERAGE_V1`: release e evidência fresca identificados; mapa de impacto; taxonomia universal; arquitetura/deploy e caminho crítico; negativos e boundaries; classes históricas; reconciliação de dados; órfãos; falhas silenciosas; correções SAFE; busca por equivalentes; testes confiáveis; runtime parity; efeitos externos; observabilidade; automações assíncronas; baseline material; ownership/deadlines; recuperação/rollback; legado/duplicidade; evidence artifact; self-test quando aplicável; reauditoria contraditória e meta-auditoria.
+
+O veredito não é opinativo: gere `AUDIT_CERTIFICATION_MANIFEST_V1` e execute `scripts/certify-audit-manifest.py`. Somente `AUDIT_VERDICT=APTO` para o mesmo SHA/release/ambiente/escopo autoriza declarar `APTO`. Qualquer ausência/inconsistência material falha fechado. Durante remediação, use `NÃO APTO`; encerramento alternativo permitido apenas como `BLOCKED_EXTERNAL` estreitamente comprovado.
+
+## Meta-auditoria final
+Antes de encerrar, investigue: que classe inteira de falha foi esquecida? qual dependência indireta não entrou no mapa de impacto? qual erro poderia retornar sucesso aparente? qual entidade poderia desaparecer do funil? quais conclusões dependem de suposição? que mutação faria nossos próprios gates falharem? se o relatório estiver errado, onde? o que ainda pode causar perda financeira, perda de dados, efeito externo incorreto, indisponibilidade ou trabalho manual evitável? Somente então atualize `docs/quality/AUDIT_STATUS.md`, o pacote de evidência e qualquer `AUDIT_ESCAPE`.

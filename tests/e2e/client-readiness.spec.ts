@@ -15,7 +15,9 @@ async function signIn(page: import('./fixtures').Page) {
 test('local demo owner sees operational dashboard and navigation', async ({ page }) => {
   await signIn(page)
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
-  await expect(page.getByText('R$ 900,00')).toBeVisible()
+  // O total do card varia com outros casos E2E; a verificacao aqui cobre o valor formatado, nao um saldo fixo.
+  const financeCard = page.getByRole('link', { name: 'Abrir financeiro' })
+  await expect(financeCard.locator('strong')).toHaveText(/^R\$\s*[\d.]+,\d{2}$/)
   await expect(page.getByRole('heading', { name: 'Pacientes' }).locator('..').getByText(/\d+ pacientes/)).toBeVisible()
   await expect(page.getByRole('link', { name: 'Agenda', exact: true })).toHaveAttribute('href', '/agenda')
   await expect(page.getByRole('link', { name: 'Financeiro', exact: true })).toHaveAttribute('href', '/financeiro')
@@ -29,7 +31,7 @@ test('local demo owner sees seeded operational surfaces', async ({ page }) => {
 
   await page.goto('/financeiro')
   await expect(page.getByRole('heading', { name: 'Financeiro' })).toBeVisible()
-  await expect(page.getByText('Ana', { exact: true })).toBeVisible()
+  await expect(page.locator('.receivables-list > li strong').filter({ hasText: /^Ana$/ }).first()).toBeVisible()
 
   await page.goto('/eventos')
   await expect(page.getByRole('heading', { name: 'Eventos' })).toBeVisible()
@@ -37,7 +39,7 @@ test('local demo owner sees seeded operational surfaces', async ({ page }) => {
 
   await page.goto('/pessoas')
   await expect(page.getByRole('heading', { name: 'Pacientes' })).toBeVisible()
-  await expect(page.getByText('Ana', { exact: true })).toBeVisible()
+  await expect(page.locator('.people-results > li strong').filter({ hasText: /^Ana$/ }).first()).toBeVisible()
   await expect(page.getByText('Nome civil: Ana Demonstração', { exact: true })).toBeVisible()
   await page.goto('/fiscal')
   await expect(page.getByRole('heading', { name: 'Fiscal' })).toBeVisible()

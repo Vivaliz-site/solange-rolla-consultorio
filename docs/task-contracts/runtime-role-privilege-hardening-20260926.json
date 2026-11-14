@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "status": "approved",
+  "issue": 245,
+  "migration": "20260919205000_runtime_role_privilege_hardening.sql",
+  "owners": [
+    "audit",
+    "forms"
+  ],
+  "objects": [
+    {
+      "name": "public.audit_events",
+      "owner": "audit"
+    },
+    {
+      "name": "public.form_templates",
+      "owner": "forms"
+    },
+    {
+      "name": "public.form_template_versions",
+      "owner": "forms"
+    },
+    {
+      "name": "public.form_submissions",
+      "owner": "forms"
+    }
+  ]
+}

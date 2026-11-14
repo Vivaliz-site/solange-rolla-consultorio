@@ -85,6 +85,17 @@ export function assertEnvironment(env = process.env) {
     errors.push('production live providers require the explicit go-live gate')
   }
 
+  if (appEnvironment === 'production' && isTrue(env.WHATSAPP_LIVE_ENABLED)) {
+    for (const name of [
+      'WHATSAPP_ACCESS_TOKEN',
+      'WHATSAPP_PHONE_NUMBER_ID',
+      'WEBHOOK_SIGNING_SECRET_META_WHATSAPP',
+      'WEBHOOK_VERIFY_TOKEN_META_WHATSAPP',
+    ]) {
+      if (!env[name]?.trim()) errors.push(`production WhatsApp live requires ${name}`)
+    }
+  }
+
   if (errors.length > 0) {
     throw new Error(`environment isolation assertion failed:\n- ${errors.join('\n- ')}`)
   }

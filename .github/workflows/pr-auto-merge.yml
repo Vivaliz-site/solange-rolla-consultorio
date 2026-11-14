@@ -111,12 +111,29 @@ jobs:
           fi
 
           current_pr="$(gh api "repos/$REPO/pulls/$pr_number")"
-          jq -e --arg sha "$HEAD_SHA" '
+          # The PR can be merged by another authorized executor while checks
+          # are read above. Preserve exact-head revalidation instead of making
+          # this automation fail on a stale 'open' snapshot.
+          if ! jq -e --arg sha "$HEAD_SHA" '
             .state == "open" and
             .base.ref == "main" and
             .head.sha == $sha and
             .head.repo.full_name == .base.repo.full_name
-          ' <<<"$current_pr" >/dev/null
+          ' <<<"$current_pr" >/dev/null; then
+            already_merged_sha="$(jq -r --arg sha "$HEAD_SHA" '
+              select(.merged_at != null and .head.sha == $sha and
+                     .base.ref == "main" and
+                     .head.repo.full_name == .base.repo.full_name) |
+              (.merge_commit_sha // empty)
+            ' <<<"$current_pr")"
+            if [ -n "$already_merged_sha" ]; then
+              echo "merged_main_sha=$already_merged_sha" >> "$GITHUB_OUTPUT"
+              echo "PR #$pr_number merged concurrently at main@$already_merged_sha; revalidating exact SHA."
+            else
+              echo "PR #$pr_number changed while checks were evaluated; skip stale candidate."
+            fi
+            exit 0
+          fi
           mergeable_state="$(jq -r '.mergeable_state // "unknown"' <<<"$current_pr")"
           if [ "$mergeable_state" != "clean" ]; then
             echo "PR #$pr_number is not currently mergeable (mergeable_state=$mergeable_state)."
@@ -141,12 +158,11 @@ jobs:
         id: revalidate
         # The squash merge above is pushed with GITHUB_TOKEN, which GitHub
         # does not treat as a `push` event trigger. Without this step,
-        # ci.yml/db.yml/repository-governance.yml's `push` triggers never
-        # fire for the resulting main commit, so it can never accumulate the
-        # push-gated check runs that staging-promote.yml requires before it
-        # will deploy an exact SHA. Re-dispatch those three workflows against
-        # the new main tip so the commit gets validated in its final,
-        # merged form instead of only as a pre-merge PR head.
+        # ci.yml/db.yml/repository-governance.yml and the Absolute Audit Main
+        # Guard's `push` triggers never fire for the resulting main commit.
+        # Re-dispatch all four workflows against the new main tip so the commit
+        # gets validated in its final, merged form before staging promotion,
+        # instead of only as a pre-merge PR head.
         if: steps.pr.outputs.pr_number != '' || steps.pr.outputs.merged_main_sha != ''
         env:
           GH_TOKEN: ${{ github.token }}
@@ -163,7 +179,7 @@ jobs:
           fi
           existing="$(gh api "repos/$REPO/actions/runs?head_sha=$sha&event=workflow_dispatch&per_page=100")"
           echo "Ensuring post-merge validation for main@$sha"
-          for workflow in ci.yml db.yml repository-governance.yml; do
+          for workflow in ci.yml db.yml repository-governance.yml absolute-audit-main-guard.yml; do
             path=".github/workflows/$workflow"
             if jq -e --arg path "$path" '.workflow_runs[] | select(.path == $path)' <<<"$existing" >/dev/null; then
               echo "Skipping already-dispatched $workflow for main@$sha"
@@ -172,52 +188,3 @@ jobs:
             gh api --method POST "repos/$REPO/actions/workflows/$workflow/dispatches" -f ref=main
           done
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
-
-  staging-handoff:
-    needs: merge-if-green
-    if: needs.merge-if-green.outputs.main_sha != ''
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - name: Hand validated main to automatic staging promotion
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          MAIN_SHA: ${{ needs.merge-if-green.outputs.main_sha }}
-          STAGING_HANDOFF_MAX_ATTEMPTS: 160
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          sha="$MAIN_SHA"
-          current_main="$(gh api "repos/$REPO/git/ref/heads/main" --jq .object.sha)"
-          [ "$current_main" = "$sha" ] || { echo "Main advanced to $current_main; refusing stale staging handoff $sha."; exit 0; }
-          required=('CI' 'Database' 'Repository Governance Gate')
-          required_json="$(printf '%s\n' "${required[@]}" | jq -R . | jq -s .)"
-          for attempt in $(seq 1 "$STAGING_HANDOFF_MAX_ATTEMPTS"); do
-            runs="$(gh api "repos/$REPO/actions/runs?head_sha=$sha&event=workflow_dispatch&per_page=100")"
-            if jq -e --argjson required "$required_json" '
-              . as $root |
-              all($required[];
-                . as $name |
-                ($root.workflow_runs | map(select(.name == $name and .head_branch == "main")) | sort_by(.created_at) | last) as $run |
-                ($run != null and $run.status == "completed" and $run.conclusion == "success")
-              )
-            ' <<<"$runs" >/dev/null; then
-              echo "canonical post-merge checks are green for main@$sha"
-              break
-            fi
-            if [ "$attempt" -eq "$STAGING_HANDOFF_MAX_ATTEMPTS" ]; then
-              echo "canonical post-merge checks did not become green for main@$sha" >&2
-              exit 1
-            fi
-            echo "canonical post-merge checks still pending ($attempt/$STAGING_HANDOFF_MAX_ATTEMPTS) for main@$sha"
-            sleep 15
-          done
-          existing="$(gh api "repos/$REPO/actions/runs?head_sha=$sha&event=workflow_dispatch&per_page=100")"
-          if jq -e '.workflow_runs[] | select(.path == ".github/workflows/staging-promote.yml") | select(.status != "completed" or .conclusion == "success")' <<<"$existing" >/dev/null; then
-            echo "Staging Promote already dispatched for main@$sha"
-            exit 0
-          fi
-          echo "Handing validated main@$sha to Staging Promote."
-          gh api --method POST "repos/$REPO/actions/workflows/staging-promote.yml/dispatches" \
-            -f ref=main -f "inputs[commit_sha]=$sha"

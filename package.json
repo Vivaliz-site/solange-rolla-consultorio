@@ -20,10 +20,10 @@
     "environment:check": "node scripts/assert-environment.mjs",
     "seed:check": "node scripts/verify-synthetic-seed.mjs",
     "test:e2e": "playwright test",
-    "supabase:start": "npx supabase@2.115.0 start",
-    "supabase:stop": "npx supabase@2.115.0 stop",
-    "supabase:reset": "npx supabase@2.115.0 db reset",
-    "supabase:test": "npx supabase@2.115.0 test db",
+    "supabase:start": "npx supabase@2.118.0 start",
+    "supabase:stop": "npx supabase@2.118.0 stop",
+    "supabase:reset": "npx supabase@2.118.0 db reset",
+    "supabase:test": "npx supabase@2.118.0 test db",
     "worker:documents:build": "tsc -p tsconfig.worker.json",
     "worker:documents": "npm run worker:documents:build && node --conditions=react-server .worker-dist/scripts/document-worker.js",
     "worker:messaging:build": "tsc -p tsconfig.worker.json",
@@ -34,13 +34,13 @@
   "dependencies": {
     "@supabase/ssr": "0.12.5",
     "@supabase/supabase-js": "2.112.4",
-    "next": "16.3.4",
-    "nodemailer": "9.1.1",
+    "next": "16.4.3",
+    "nodemailer": "10.3.1",
     "pdf-lib": "1.17.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "server-only": "0.0.1",
-    "zod": "4.4.3"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
@@ -51,15 +51,23 @@
     "@types/react-dom": "^19.2.0",
     "dependency-cruiser": "18.2.0",
     "eslint": "9.39.5",
-    "eslint-config-next": "16.3.4",
+    "eslint-config-next": "16.4.3",
     "js-yaml": "^4.3.2",
     "typescript": "5.9.2",
-    "vitest": "4.1.11"
+    "vitest": "4.1.11",
+    "braces": "file:vendor/braces"
   },
   "overrides": {
-    "next@16.3.4": {
+    "minimatch@3.1.5": {
+      "brace-expansion": "1.1.21"
+    },
+    "minimatch@10.2.6": {
+      "brace-expansion": "5.0.12"
+    },
+    "braces": "$braces",
+    "next@16.4.3": {
       "postcss": "8.5.26",
-      "sharp": "0.35.4"
+      "sharp": "0.35.5"
     }
   }
 }

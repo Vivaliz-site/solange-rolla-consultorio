@@ -106,15 +106,19 @@ describe('module contracts', () => {
     )
   }, 30_000)
 
-  it('runs architecture contracts inside the existing build gate', () => {
+  it('runs architecture contracts exactly once in the dedicated required gate', () => {
     const workflow = fs.readFileSync(
       path.join(repositoryRoot, '.github/workflows/ci.yml'),
       'utf8',
     )
-    const buildJob = workflow.split(/^  build:/mu)[1]
+    const architectureJob = workflow.split(/^  architecture:/mu)[1]?.split(/^  build:/mu)[0]
+    const buildJob = workflow.split(/^  build:/mu)[1]?.split(/^  e2e:/mu)[0]
 
+    expect(architectureJob).toBeDefined()
+    expect(architectureJob).toContain('run: npm run arch:check')
+    expect(architectureJob).toContain('run: npm run modules:check')
     expect(buildJob).toBeDefined()
-    expect(buildJob).toContain('run: npm run arch:check')
-    expect(buildJob).toContain('run: npm run modules:check')
+    expect(buildJob).not.toContain('run: npm run arch:check')
+    expect(buildJob).not.toContain('run: npm run modules:check')
   })
 })

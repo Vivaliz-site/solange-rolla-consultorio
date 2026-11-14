@@ -126,6 +126,7 @@ export default defineConfig([
     'out/**',
     'coverage/**',
     '.worktrees/**',
+    'vendor/braces/**',
     'backups/**',
     'playwright-report/**',
     'test-results/**',

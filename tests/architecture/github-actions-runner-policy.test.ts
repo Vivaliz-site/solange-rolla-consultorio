@@ -15,6 +15,7 @@ const runnerLineExceptions: Record<string, string> = {
   'staging-promote.yml': `runs-on: [${[...runnerLabels, 'solange-staging-host'].join(', ')}]`,
   'diag-staging-host.yml': `runs-on: [${[...runnerLabels, 'solange-staging-host'].join(', ')}]`,
   'historical-state-audit.yml': `runs-on: [${[...runnerLabels, 'solange-staging-host'].join(', ')}]`,
+  'staging-managed-backup-evidence.yml': `runs-on: [${[...runnerLabels, 'solange-staging-host'].join(', ')}]`,
 }
 const sameRepoGuard = 'github.event.pull_request.head.repo.full_name == github.repository'
 type PullRequestEvent = 'pull_request' | 'pull_request_target'
@@ -37,7 +38,8 @@ function parsedWorkflow(content: string): Record<string, unknown> | undefined {
 function isSolangeRunner(value: unknown): boolean {
   return (
     Array.isArray(value) &&
-    value.length === runnerLabels.length &&
+    (value.length === runnerLabels.length ||
+      (value.length === runnerLabels.length + 1 && value[runnerLabels.length] === 'solange-staging-host')) &&
     runnerLabels.every((label, index) => value[index] === label)
   )
 }
@@ -193,7 +195,15 @@ function normalizeCondition(condition: string): string {
 
 function conditionRequiresSameRepoOnEvent(condition: string, eventName: PullRequestEvent): boolean {
   const branches = splitTopLevel(stripOuterParens(normalizeCondition(condition)), '||')
-  if (branches.length === 1) return branchRequiresPositiveSameRepoGuard(branches[0] ?? '')
+  if (branches.length === 1) {
+    // Exact workflow_dispatch guards are mutually exclusive with fork-controlled PR events.
+    // Never exempt an OR branch; the event equality must be a top-level AND conjunct.
+    const conjuncts = splitTopLevel(branches[0] ?? '', '&&')
+    if (conjuncts.some((conjunct) => stripOuterParens(conjunct) === "github.event_name == 'workflow_dispatch'")) {
+      return true
+    }
+    return branchRequiresPositiveSameRepoGuard(branches[0] ?? '')
+  }
   if (branches.length !== 2) return false
   if (stripOuterParens(branches[0] ?? '') !== `github.event_name != '${eventName}'`) return false
   return branchRequiresPositiveSameRepoGuard(branches[1] ?? '')
@@ -212,14 +222,37 @@ describe('GitHub Actions runner policy', () => {
     expect(packageJson.devDependencies?.['js-yaml']).toBeDefined()
   })
 
-  it('routes workflow jobs through Solange runners except the non-blocking control-plane handoff', () => {
+  it('routes all workflow jobs through approved self-hosted Solange runners', () => {
     for (const workflow of workflows()) {
       const runsOnLines = workflow.content.match(/^\s*runs-on:.*$/gmu) ?? []
-      const allowed = [runnerLine, runnerLineExceptions[workflow.name], ...(workflow.name === 'pr-auto-merge.yml' ? ['runs-on: ubuntu-latest'] : [])].filter(Boolean)
+      const allowed = [runnerLine, runnerLineExceptions[workflow.name]].filter(Boolean)
       for (const line of runsOnLines) {
         expect(allowed, `${workflow.name}: ${line.trim()}`).toContain(line.trim())
       }
     }
+  })
+
+  it('keeps the managed backup evidence job on the dedicated staging host and main only', () => {
+    const workflow = workflows().find(({ name }) => name === 'staging-managed-backup-evidence.yml')
+    expect(workflow).toBeDefined()
+    const parsed = parsedWorkflow(workflow?.content ?? '')
+    const triggers = parsed?.on as Record<string, unknown> | undefined
+    expect(Object.keys(triggers ?? {}).sort()).toEqual(['schedule', 'workflow_dispatch'])
+    expect(parsed?.permissions).toEqual({ contents: 'read' })
+    const jobs = parsed?.jobs as Record<string, Record<string, unknown>> | undefined
+    const verifier = jobs?.['verify-provider-backups']
+    expect(verifier?.['runs-on']).toEqual([...runnerLabels, 'solange-staging-host'])
+    expect(verifier?.if).toBe(
+      "github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || inputs.mode == 'provider_metadata')",
+    )
+    expect(verifier?.environment).toBe('staging')
+    const exporter = jobs?.['export-managed-staging-encrypted']
+    expect(exporter?.['runs-on']).toEqual([...runnerLabels, 'solange-staging-host'])
+    expect(exporter?.if).toBe(
+      "github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.mode == 'offsite_export'",
+    )
+    expect(exporter?.environment).toBe('staging')
+    expect(workflow?.content).toContain('persist-credentials: false')
   })
 
   it('guards every pull-request runner job at job level for every PR event', () => {
@@ -274,6 +307,18 @@ describe('GitHub Actions runner policy', () => {
     expect(conditionRequiresSameRepoOnPullRequest(bypass)).toBe(false)
   })
 
+  it('also enforces the PR trust boundary for jobs on the dedicated staging runner', () => {
+    const workflow = [
+      'on: pull_request_target',
+      'jobs:',
+      '  exposed:',
+      `    runs-on: [${[...runnerLabels, 'solange-staging-host'].join(', ')}]`,
+    ].join('\n')
+    const [job] = runnerJobs(workflow)
+    expect(job?.name).toBe('exposed')
+    expect(conditionRequiresSameRepoOnEvent(job?.condition ?? '', 'pull_request_target')).toBe(false)
+  })
+
   it('recognizes inline and quoted pull-request trigger syntax', () => {
     expect(hasPullRequestTrigger('on: [push, pull_request]\n')).toBe(true)
     expect(hasPullRequestTrigger('"on":\n  "pull_request":\n')).toBe(true)
@@ -318,6 +363,20 @@ describe('GitHub Actions runner policy', () => {
     const workflow = ['concurrency:', '  group: &pr-event pull_request', 'on: [*pr-event]'].join('\n')
 
     expect(hasPullRequestTrigger(workflow)).toBe(true)
+  })
+
+  it('allows exact dispatch-only postmerge jobs while rejecting PR-event OR bypasses', () => {
+    const onlyDispatch = [
+      "github.event_name == 'workflow_dispatch'",
+      "github.ref == 'refs/heads/main'",
+      "github.actor == 'github-actions[bot]'",
+    ].join(' && ')
+    for (const eventName of ['pull_request', 'pull_request_target'] as const) {
+      expect(conditionRequiresSameRepoOnEvent(onlyDispatch, eventName)).toBe(true)
+      expect(conditionRequiresSameRepoOnEvent(`(${onlyDispatch}) || true`, eventName)).toBe(false)
+      expect(conditionRequiresSameRepoOnEvent("github.event_name == 'workflow_dispatch' == false", eventName)).toBe(false)
+      expect(conditionRequiresSameRepoOnEvent(`github.event_name != '${eventName}'`, eventName)).toBe(false)
+    }
   })
 
   it('requires the matching event exemption for pull_request_target', () => {

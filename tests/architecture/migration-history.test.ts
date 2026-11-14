@@ -624,6 +624,22 @@ describe('migration history', () => {
     expect(result.status, outputOf(result)).toBe(0)
   })
 
+  it('treats service_role grant and revoke targets as roles, not SQL objects', () => {
+    const repository = createRepository()
+    const migration = '20260824000355_forms_service_role_privileges.sql'
+    fs.writeFileSync(
+      path.join(repository, 'supabase/migrations', migration),
+      '-- owners: forms\n-- task-contract: docs/task-contracts/forms_service_role_privileges.json\nrevoke all on public.form_templates from service_role;\ngrant select on public.form_templates to service_role;\n',
+    )
+    writeTaskContract(repository, 'forms_service_role_privileges.json', {
+      issue: 127, migration, owners: ['forms'],
+      objects: [{ name: 'public.form_templates', owner: 'forms' }],
+    })
+
+    const result = checkMigrations(repository, { baseRef: 'migration-base' })
+    expect(result.status, outputOf(result)).toBe(0)
+  })
+
   it('exposes immutable migration history as an npm and database CI gate', () => {
     const packageJson = JSON.parse(
       fs.readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'),
@@ -640,10 +656,10 @@ describe('migration history', () => {
     expect(workflow).toContain('name: Migration history')
     expect(workflow).toContain('github.event.before')
     expect(workflow).toContain('run: npm run migrations:check')
-    expect(workflow).toContain('npx supabase@2.115.0 db start')
-    expect(workflow).toContain('npx supabase@2.115.0 db reset')
-    expect(workflow).toContain('npx supabase@2.115.0 test db')
-    expect(workflow).toContain('npx supabase@2.115.0 gen types typescript --local')
+    expect(workflow).toContain('npx supabase@2.118.0 db start')
+    expect(workflow).toContain('npx supabase@2.118.0 db reset')
+    expect(workflow).toContain('npx supabase@2.118.0 test db')
+    expect(workflow).toContain('npx supabase@2.118.0 gen types typescript --local')
   })
 
   it('documents clinical and platform schema ownership boundaries', () => {

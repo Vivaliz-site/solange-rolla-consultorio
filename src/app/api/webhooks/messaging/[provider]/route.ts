@@ -1,4 +1,10 @@
-import { ingestProviderEvent, type ProviderEventRepository } from '../../../../../modules/messaging/public'
+import { timingSafeEqual } from 'node:crypto'
+import {
+  createMetaWhatsAppWebhookProvider,
+  createSupabaseProviderEventRepository,
+  ingestProviderEvent,
+  type ProviderEventRepository,
+} from '../../../../../modules/messaging/public'
 import { cloneRequestWithBoundedBody } from '../../../../../platform/security/request-limits'
 
 export type WebhookEvent = {
@@ -6,7 +12,7 @@ export type WebhookEvent = {
   payload: Record<string, unknown>
   delivery?: {
     messageId: string
-    status: 'sent' | 'delivered' | 'read'
+    status: 'sent' | 'delivered' | 'read' | 'failed'
   }
 }
 
@@ -83,8 +89,53 @@ export function createMessagingWebhookHandler(
   }
 }
 
+function sameToken(expected: string, received: string | null): boolean {
+  if (!received) return false
+  const expectedBytes = Buffer.from(expected, 'utf8')
+  const receivedBytes = Buffer.from(received, 'utf8')
+  return expectedBytes.length === receivedBytes.length && timingSafeEqual(expectedBytes, receivedBytes)
+}
+
+async function providerName(context: { params: Promise<{ provider: string }> }): Promise<string> {
+  return (await context.params).provider
+}
+
+export async function GET(request: Request, context: { params: Promise<{ provider: string }> }) {
+  if (await providerName(context) !== 'meta-whatsapp') {
+    return Response.json({ error: 'provider not found' }, { status: 404 })
+  }
+
+  const verifyToken = process.env.WEBHOOK_VERIFY_TOKEN_META_WHATSAPP
+  if (!verifyToken) return Response.json({ error: 'provider not configured' }, { status: 503 })
+
+  const url = new URL(request.url)
+  const mode = url.searchParams.get('hub.mode')
+  const receivedToken = url.searchParams.get('hub.verify_token')
+  const challenge = url.searchParams.get('hub.challenge')
+
+  if (mode !== 'subscribe' || !sameToken(verifyToken, receivedToken)) {
+    return Response.json({ error: 'invalid webhook verification' }, { status: 403 })
+  }
+  if (!challenge) return Response.json({ error: 'invalid webhook verification' }, { status: 400 })
+
+  return new Response(challenge, {
+    status: 200,
+    headers: { 'content-type': 'text/plain; charset=utf-8' },
+  })
+}
+
 export async function POST(request: Request, context: { params: Promise<{ provider: string }> }) {
-  void request
-  void context
-  return Response.json({ error: 'provider not configured' }, { status: 503 })
+  if (await providerName(context) !== 'meta-whatsapp') {
+    return Response.json({ error: 'provider not found' }, { status: 404 })
+  }
+
+  const appSecret = process.env.WEBHOOK_SIGNING_SECRET_META_WHATSAPP
+  if (!appSecret) return Response.json({ error: 'provider not configured' }, { status: 503 })
+
+  const handler = createMessagingWebhookHandler(
+    'meta-whatsapp',
+    createMetaWhatsAppWebhookProvider({ appSecret }),
+    createSupabaseProviderEventRepository(),
+  )
+  return handler(request, context)
 }

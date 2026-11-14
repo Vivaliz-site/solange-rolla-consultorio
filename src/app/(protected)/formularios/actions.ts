@@ -75,6 +75,15 @@ export async function createFormTemplateAction(formData: FormData) {
   const classification = required(formData, 'classification') as FormClassification
   if (!['administrative', 'sensitive'].includes(classification)) throw new Error('FORM_CLASSIFICATION_INVALID')
   const fields = readFields(formData)
+  const formSchema: NonNullable<Json> = {
+    fields: fields.map((field) => ({
+      key: field.key,
+      label: field.label,
+      type: field.type,
+      required: field.required,
+      ...(field.options ? { options: [...field.options] } : {}),
+    })),
+  }
   const client = await createServerSupabaseClient()
   const templateId = randomUUID()
   const versionId = randomUUID()
@@ -85,7 +94,7 @@ export async function createFormTemplateAction(formData: FormData) {
     template_id: templateId,
     version: 1,
     data_classification: classification,
-    schema: { fields } as unknown as Json,
+    schema: formSchema,
   })
   if (versionError) {
     await client.from('form_templates').delete().eq('id', templateId)

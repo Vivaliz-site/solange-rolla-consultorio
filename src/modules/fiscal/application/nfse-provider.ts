@@ -26,9 +26,20 @@ export type NfseStatusResult = {
 
 export type NfseProviderErrorKind = 'retryable' | 'final' | 'ambiguous'
 
+const FINAL_CONFIGURATION_ERRORS = new Set([
+  'NFSE_LIVE_DISABLED',
+  'NFSE_CONFIGURATION_REQUIRED',
+  'NFSE_SIGNED_XML_REQUIRED',
+  'NFSE_DPS_ID_REQUIRED',
+  'NFSE_TRANSPORT_URL_INVALID',
+  'NFSE_TRANSPORT_HOST_NOT_ALLOWED',
+  'NFSE_TRANSPORT_TIMEOUT_INVALID',
+])
+
 export function classifyNfseError(error: unknown): NfseProviderErrorKind {
-  if (error instanceof Error && error.message === 'NFSE_AMBIGUOUS') return 'ambiguous'
-  if (error instanceof Error && error.message === 'NFSE_FINAL') return 'final'
+  if (!(error instanceof Error)) return 'retryable'
+  if (error.message === 'NFSE_AMBIGUOUS') return 'ambiguous'
+  if (error.message === 'NFSE_FINAL' || FINAL_CONFIGURATION_ERRORS.has(error.message)) return 'final'
   return 'retryable'
 }
 

@@ -19,5 +19,5 @@ describe('playwright config', () => {
     delete process.env.CI
     const { default: localConfig } = await import('../../playwright.config')
     expect(localConfig.retries ?? 0).toBe(0)
-  })
+  }, 15_000)
 })

@@ -8,6 +8,9 @@ on:
 permissions:
   contents: read
 
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+
 concurrency:
   group: governance-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -22,5 +25,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Validate governance contract
+        env:
+          AUDIT_LEDGER_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          AUDIT_LEDGER_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: bash scripts/repository-governance-validate.sh ci

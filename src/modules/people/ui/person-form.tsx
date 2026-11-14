@@ -1,6 +1,7 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export type PersonFormValues = {
   civil_name: string
@@ -23,7 +24,7 @@ export type PersonFormValues = {
   fiscal_postal_code: string
 }
 
-export type PersonFormState = { revision: number; error: string | null; values: PersonFormValues }
+export type PersonFormState = { revision: number; error: string | null; success?: boolean; values: PersonFormValues }
 
 export const EMPTY_PERSON_FORM_VALUES: PersonFormValues = {
   civil_name: '',
@@ -48,24 +49,39 @@ export const EMPTY_PERSON_FORM_VALUES: PersonFormValues = {
 
 type PersonFormAction = (state: PersonFormState, formData: FormData) => Promise<PersonFormState>
 
+function SuccessRedirect({ success, href }: { success: boolean; href: string }) {
+  const router = useRouter()
+
+  useEffect(() => {
+    if (success) router.replace(href)
+  }, [router, success, href])
+
+  return null
+}
+
 export function PersonForm({
   action,
   initialValues = EMPTY_PERSON_FORM_VALUES,
   mode = 'create',
+  successRedirect,
 }: {
   action: PersonFormAction
   initialValues?: PersonFormValues
   mode?: 'create' | 'edit'
+  successRedirect?: string
 }) {
   const [state, formAction, pending] = useActionState(action, {
     revision: 0,
     error: null,
+    success: false,
     values: initialValues,
   })
   const values = state.values
   const editing = mode === 'edit'
 
-  return <form key={state.revision} className="person-form" action={formAction}>
+  return <>
+    {successRedirect && <SuccessRedirect success={state.success === true} href={successRedirect} />}
+    <form key={state.revision} className="person-form" action={formAction}>
     {state.error && <p role="alert" className="form-field__error">{state.error}</p>}
 
     <fieldset>
@@ -131,5 +147,6 @@ export function PersonForm({
     <button type="submit" className="ui-button ui-button--primary" disabled={pending}>
       {pending ? (editing ? 'Salvando…' : 'Cadastrando…') : (editing ? 'Salvar cadastro' : 'Cadastrar paciente')}
     </button>
-  </form>
+    </form>
+  </>
 }

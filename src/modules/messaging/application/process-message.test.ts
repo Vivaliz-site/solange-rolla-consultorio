@@ -40,6 +40,21 @@ describe('message worker', () => {
     expect(failed).toBe(true)
   })
 
+  it('persists the provider external id when the provider accepts the message', async () => {
+    const marked: Array<{ messageId: string; externalId?: string }> = []
+    const result = await processMessage({ messageId: 'm1', attemptNumber: 1, message }, {
+      provider: { send: async () => ({ accepted: true, externalId: 'provider-message-1', status: 'accepted' }) },
+      attempts: {
+        appendAttempt: async () => {},
+        markSent: async (messageId, externalId) => { marked.push({ messageId, externalId }) },
+        markFailed: async () => {},
+      },
+      retryQueue: { requeue: async () => { throw new Error('must not requeue') } },
+    })
+    expect(result).toBe('sent')
+    expect(marked).toEqual([{ messageId: 'm1', externalId: 'provider-message-1' }])
+  })
+
   it('does not retry permanent failures after the lease budget', async () => {
     let failed = false
     const result = await processMessage({ messageId: 'm1', attemptNumber: 5, message }, {

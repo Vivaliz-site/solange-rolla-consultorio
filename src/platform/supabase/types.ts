@@ -115,7 +115,7 @@ export type Database = {
         Row: {
           business_timezone: string
           cancellation_deadline_at: string
-          cancellation_policy_snapshot: Json
+          cancellation_policy_snapshot: NonNullable<Json>
           created_at: string
           ends_at: string
           id: string
@@ -129,7 +129,7 @@ export type Database = {
         Insert: {
           business_timezone: string
           cancellation_deadline_at: string
-          cancellation_policy_snapshot: Json
+          cancellation_policy_snapshot: NonNullable<Json>
           created_at?: string
           ends_at: string
           id?: string
@@ -143,7 +143,7 @@ export type Database = {
         Update: {
           business_timezone?: string
           cancellation_deadline_at?: string
-          cancellation_policy_snapshot?: Json
+          cancellation_policy_snapshot?: NonNullable<Json>
           created_at?: string
           ends_at?: string
           id?: string
@@ -188,7 +188,7 @@ export type Database = {
           entity_id: string
           entity_type: string
           id: string
-          metadata: Json
+          metadata: NonNullable<Json>
         }
         Insert: {
           action: string
@@ -199,7 +199,7 @@ export type Database = {
           entity_id: string
           entity_type: string
           id?: string
-          metadata?: Json
+          metadata?: NonNullable<Json>
         }
         Update: {
           action?: string
@@ -210,7 +210,7 @@ export type Database = {
           entity_id?: string
           entity_type?: string
           id?: string
-          metadata?: Json
+          metadata?: NonNullable<Json>
         }
         Relationships: []
       }
@@ -220,7 +220,7 @@ export type Database = {
           countable_hours: number
           created_at: string
           effective_from: string
-          excluded_weekdays: Json
+          excluded_weekdays: NonNullable<Json>
           id: string
           late_cancellation_charge_enabled: boolean
           legal_document_version_id: string | null
@@ -232,7 +232,7 @@ export type Database = {
           countable_hours: number
           created_at?: string
           effective_from: string
-          excluded_weekdays: Json
+          excluded_weekdays: NonNullable<Json>
           id?: string
           late_cancellation_charge_enabled: boolean
           legal_document_version_id?: string | null
@@ -244,7 +244,7 @@ export type Database = {
           countable_hours?: number
           created_at?: string
           effective_from?: string
-          excluded_weekdays?: Json
+          excluded_weekdays?: NonNullable<Json>
           id?: string
           late_cancellation_charge_enabled?: boolean
           legal_document_version_id?: string | null
@@ -745,7 +745,7 @@ export type Database = {
           created_at: string
           effective_from: string
           effective_until: string | null
-          fiscal_address: Json
+          fiscal_address: NonNullable<Json>
           id: string
           issuer_document: string
           issuer_kind: string
@@ -759,7 +759,7 @@ export type Database = {
           created_at?: string
           effective_from: string
           effective_until?: string | null
-          fiscal_address?: Json
+          fiscal_address?: NonNullable<Json>
           id?: string
           issuer_document: string
           issuer_kind: string
@@ -773,7 +773,7 @@ export type Database = {
           created_at?: string
           effective_from?: string
           effective_until?: string | null
-          fiscal_address?: Json
+          fiscal_address?: NonNullable<Json>
           id?: string
           issuer_document?: string
           issuer_kind?: string
@@ -910,7 +910,7 @@ export type Database = {
           created_at: string
           data_classification: string
           id: string
-          schema: Json
+          schema: NonNullable<Json>
           template_id: string
           version: number
         }
@@ -918,7 +918,7 @@ export type Database = {
           created_at?: string
           data_classification: string
           id?: string
-          schema: Json
+          schema: NonNullable<Json>
           template_id: string
           version: number
         }
@@ -926,7 +926,7 @@ export type Database = {
           created_at?: string
           data_classification?: string
           id?: string
-          schema?: Json
+          schema?: NonNullable<Json>
           template_id?: string
           version?: number
         }
@@ -964,21 +964,24 @@ export type Database = {
       inbox_events: {
         Row: {
           id: string
-          payload: Json
+          payload: NonNullable<Json>
+          processed_at: string | null
           provider: string
           provider_event_id: string
           received_at: string
         }
         Insert: {
           id?: string
-          payload: Json
+          payload: NonNullable<Json>
+          processed_at?: string | null
           provider: string
           provider_event_id: string
           received_at?: string
         }
         Update: {
           id?: string
-          payload?: Json
+          payload?: NonNullable<Json>
+          processed_at?: string | null
           provider?: string
           provider_event_id?: string
           received_at?: string
@@ -1168,7 +1171,10 @@ export type Database = {
           dispatched_at: string | null
           id: string
           idempotency_key: string
-          payload: Json
+          payload: NonNullable<Json>
+          provider_delivery_status: string | null
+          provider_delivery_updated_at: string | null
+          provider_message_id: string | null
           recipient: string
           status: string
           template_key: string
@@ -1179,7 +1185,10 @@ export type Database = {
           dispatched_at?: string | null
           id?: string
           idempotency_key: string
-          payload: Json
+          payload: NonNullable<Json>
+          provider_delivery_status?: string | null
+          provider_delivery_updated_at?: string | null
+          provider_message_id?: string | null
           recipient: string
           status?: string
           template_key: string
@@ -1190,7 +1199,10 @@ export type Database = {
           dispatched_at?: string | null
           id?: string
           idempotency_key?: string
-          payload?: Json
+          payload?: NonNullable<Json>
+          provider_delivery_status?: string | null
+          provider_delivery_updated_at?: string | null
+          provider_message_id?: string | null
           recipient?: string
           status?: string
           template_key?: string
@@ -1404,7 +1416,7 @@ export type Database = {
           emergency_contact_name: string | null
           emergency_contact_phone_e164: string | null
           emergency_contact_relationship: string | null
-          fiscal_address: Json
+          fiscal_address: NonNullable<Json>
           id: string
           phone_e164: string | null
           preferred_channel: string
@@ -1421,7 +1433,7 @@ export type Database = {
           emergency_contact_name?: string | null
           emergency_contact_phone_e164?: string | null
           emergency_contact_relationship?: string | null
-          fiscal_address?: Json
+          fiscal_address?: NonNullable<Json>
           id?: string
           phone_e164?: string | null
           preferred_channel?: string
@@ -1438,7 +1450,7 @@ export type Database = {
           emergency_contact_name?: string | null
           emergency_contact_phone_e164?: string | null
           emergency_contact_relationship?: string | null
-          fiscal_address?: Json
+          fiscal_address?: NonNullable<Json>
           id?: string
           phone_e164?: string | null
           preferred_channel?: string
@@ -1787,7 +1799,7 @@ export type Database = {
           document_status: string
           document_storage_path: string | null
           id: string
-          metadata: Json
+          metadata: NonNullable<Json>
           signature_asset_path: string | null
           signed_at: string
           source: string
@@ -1802,7 +1814,7 @@ export type Database = {
           document_status?: string
           document_storage_path?: string | null
           id?: string
-          metadata?: Json
+          metadata?: NonNullable<Json>
           signature_asset_path?: string | null
           signed_at?: string
           source: string
@@ -1817,7 +1829,7 @@ export type Database = {
           document_status?: string
           document_storage_path?: string | null
           id?: string
-          metadata?: Json
+          metadata?: NonNullable<Json>
           signature_asset_path?: string | null
           signed_at?: string
           source?: string
@@ -1961,13 +1973,25 @@ export type Database = {
     }
     Functions: {
       accounting_people_rows: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           civil_name: string
           cpf_normalized: string
           fiscal_address: Json
           id: string
         }[]
+      }
+      apply_message_provider_delivery_status: {
+        Args: { p_provider_message_id: string; p_status: string }
+        Returns: string
+      }
+      apply_receivable_adjustment_atomic: {
+        Args: {
+          p_adjustment_cents: number
+          p_reason: string
+          p_receivable_id: string
+        }
+        Returns: string
       }
       claim_document_jobs: {
         Args: { p_limit?: number }
@@ -2018,6 +2042,57 @@ export type Database = {
           supersedes_id: string
         }[]
       }
+      create_event_atomic: {
+        Args: {
+          p_capacity: number
+          p_default_price_cents: number
+          p_description: string
+          p_ends_at: string
+          p_location: string
+          p_modality: string
+          p_starts_at: string
+          p_title: string
+          p_type: string
+        }
+        Returns: string
+      }
+      create_event_expense_atomic: {
+        Args: {
+          p_amount_cents: number
+          p_description: string
+          p_event_id: string
+          p_paid_at?: string
+        }
+        Returns: string
+      }
+      create_expense_category_atomic: {
+        Args: { p_name: string }
+        Returns: string
+      }
+      create_payable_atomic: {
+        Args: {
+          p_amount_cents: number
+          p_category_id: string
+          p_competence: string
+          p_description: string
+          p_due_date: string
+          p_idempotency_key: string
+          p_vendor_id: string
+        }
+        Returns: string
+      }
+      create_recurrence_rule_atomic: {
+        Args: {
+          p_amount_cents: number
+          p_category_id: string
+          p_day_of_month: number
+          p_description: string
+          p_month_end_fallback: string
+          p_start_date: string
+          p_vendor_id: string
+        }
+        Returns: string
+      }
       create_recurring_payable_atomic: {
         Args: {
           p_amount_cents: number
@@ -2031,9 +2106,10 @@ export type Database = {
         }
         Returns: boolean
       }
-      current_aal: { Args: never; Returns: string }
+      create_vendor_atomic: { Args: { p_legal_name: string }; Returns: string }
+      current_aal: { Args: Record<PropertyKey, never>; Returns: string }
       current_app_role: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
       }
       exchange_capability: {
@@ -2072,13 +2148,13 @@ export type Database = {
         }[]
       }
       list_current_permissions: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           permission_key: string
         }[]
       }
       list_staff_users: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           active: boolean
           created_at: string
@@ -2178,6 +2254,10 @@ export type Database = {
         }
         Returns: string
       }
+      record_message_provider_acceptance: {
+        Args: { p_message_id: string; p_provider_message_id: string }
+        Returns: string
+      }
       record_payable_payment_atomic: {
         Args: {
           p_amount_cents: number
@@ -2248,6 +2328,35 @@ export type Database = {
           result_submission_version_id: string
           result_typed_name: string
         }[]
+      }
+      transition_staff_appointment_atomic: {
+        Args: {
+          p_appointment_id: string
+          p_command: string
+          p_expected_status: string
+        }
+        Returns: string
+      }
+      update_event_atomic: {
+        Args: {
+          p_capacity: number
+          p_default_price_cents: number
+          p_ends_at: string
+          p_event_id: string
+          p_location: string
+          p_modality: string
+          p_starts_at: string
+          p_title: string
+        }
+        Returns: string
+      }
+      update_event_registration_atomic: {
+        Args: {
+          p_attendance_status: string
+          p_registration_id: string
+          p_status: string
+        }
+        Returns: string
       }
       upsert_staff_profile: {
         Args: {
@@ -2395,4 +2504,3 @@ export const Constants = {
     },
   },
 } as const
-

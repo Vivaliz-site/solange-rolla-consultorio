@@ -77,7 +77,7 @@ function fiscalAddressFrom(values: PersonFormValues) {
 async function createPersonAction(previous: PersonFormState, formData: FormData): Promise<PersonFormState> {
   'use server'
   const values = valuesFrom(formData)
-  const invalid = (error: string): PersonFormState => ({ revision: previous.revision + 1, error, values })
+  const invalid = (error: string): PersonFormState => ({ revision: previous.revision + 1, error, success: false, values })
   const session = await getStaffSession()
   authorizeStaffPermission(session, 'patients.create')
 
@@ -163,7 +163,7 @@ async function createPersonAction(previous: PersonFormState, formData: FormData)
     throw error
   }
 
-  redirect('/pessoas')
+  return { revision: previous.revision + 1, error: null, success: true, values }
 }
 
 export default async function NewPersonPage() {
@@ -177,6 +177,6 @@ export default async function NewPersonPage() {
       description="Cadastre os dados administrativos uma única vez para reutilizar em agenda, formulários e financeiro."
       actions={<Link className="ui-button ui-button--outline" href="/pessoas">Voltar para pacientes</Link>}
     />
-    <PersonForm action={createPersonAction} />
+    <PersonForm action={createPersonAction} successRedirect="/pessoas" />
   </>
 }

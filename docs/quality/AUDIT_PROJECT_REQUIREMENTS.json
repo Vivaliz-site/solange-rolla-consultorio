@@ -1,0 +1,53 @@
+{
+  "schema": "AUDIT_PROJECT_REQUIREMENTS_V1",
+  "project": "Vivaliz-site/solange-rolla-consultorio",
+  "policy_version": "2026-09-21-absolute-v5",
+  "required_invariants": [
+    {
+      "id": "SOLANGE_CLINICAL_SEGREGATION_AAL2_RLS_V1",
+      "type": "evidence",
+      "description": "Clinical content segregation, AAL2/MFA and RLS authorization boundaries must be proven."
+    },
+    {
+      "id": "SOLANGE_MONEY_INTEGER_CENTS_V1",
+      "type": "evidence",
+      "description": "Money remains integer cents across persistence, calculations and UI/API boundaries."
+    },
+    {
+      "id": "SOLANGE_DOMAIN_STATE_SEPARATION_V1",
+      "type": "evidence",
+      "description": "Agenda, financial and fiscal state machines remain independent and historically compatible."
+    },
+    {
+      "id": "SOLANGE_FINANCIAL_FISCAL_IDEMPOTENCY_V1",
+      "type": "evidence",
+      "description": "Financial and fiscal external effects are idempotent, reconciled and safe under retry/concurrency."
+    },
+    {
+      "id": "SOLANGE_CRITICAL_UI_E2E_V1",
+      "type": "journey_ids",
+      "description": "Critical auth, agenda, financial and fiscal journeys must be exercised in the real browser.",
+      "required_journey_ids": [
+        "solange-auth-aal2",
+        "solange-agenda",
+        "solange-financial",
+        "solange-fiscal"
+      ]
+    },
+    {
+      "id": "SOLANGE_BACKUP_RESTORE_ROLLBACK_V1",
+      "type": "evidence",
+      "description": "Backup integrity, restore and rollback/recovery path must be proven before production readiness."
+    },
+    {
+      "id": "SOLANGE_NONPROD_LIVE_PROVIDERS_OFF_V1",
+      "type": "evidence",
+      "description": "Live external providers remain disabled outside production."
+    },
+    {
+      "id": "SOLANGE_SYNTHETIC_TEST_DATA_V1",
+      "type": "evidence",
+      "description": "Development/test validation uses synthetic data and does not expose real patient data."
+    }
+  ]
+}

@@ -28,4 +28,10 @@ O painel separa itens prontos para revisao, tratamentos pendentes, emissao e err
 Elegibilidade retorna blockers sanitizados e separa `ready`, `review` e `not_ready`. Requests usam a chave composta por origem, perfil e tratamento para preservar snapshots e idempotencia. O provider mock e exclusivo de desenvolvimento, testes e homologacao controlada; nenhum identificador sintetico representa uma NFS-e real.
 
 ## Worker e providers
-O worker consome mensagens da fila `fiscal`, arquiva somente jobs processados e reencaminha falhas com atraso. O adapter nacional exige `liveEnabled` antes de qualquer chamada de rede, classifica falhas transitórias e mantém idempotency key no ciclo de emissão/cancelamento. Respostas ambíguas não são reemitidas automaticamente.
+O worker consome mensagens da fila `fiscal`, arquiva somente jobs processados e reencaminha falhas com atraso.
+
+O adapter nacional segue o contrato oficial da SEFIN Nacional: autenticação mútua por certificado é responsabilidade do `NationalNfseTransport`; a DPS e o pedido de evento devem chegar previamente assinados em XMLDSIG e compactados em GZip/Base64 pelo `NationalNfsePayloadFactory`. Emissão usa `POST /nfse`, consulta usa `GET /nfse/{chaveAcesso}` e cancelamento usa `POST /nfse/{chaveAcesso}/eventos`.
+
+`liveEnabled` sozinho nunca habilita tráfego: ambiente (`restricted` ou `production`), transporte mTLS e fábrica de payload assinado são obrigatórios. O ambiente restrito aponta para a SEFIN de Produção Restrita e produção usa o host oficial de produção. Não existe fallback para Bearer token nem para o antigo contrato genérico `/documents`.
+
+Emissão é síncrona e POST não é repetido cegamente. Quando o resultado é ambíguo, o adapter tenta reconciliar pelo identificador imutável da DPS em `GET /dps/{id}`; sem confirmação, retorna `NFSE_AMBIGUOUS`. XML, certificado, chave privada e respostas fiscais integrais não devem entrar em logs.

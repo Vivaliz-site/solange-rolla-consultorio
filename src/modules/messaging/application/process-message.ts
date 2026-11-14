@@ -2,7 +2,7 @@ import type { MessagingProvider, ProviderMessage } from '../infrastructure/mock-
 
 export type MessageAttemptRepository = {
   appendAttempt(input: { messageId: string; attemptNumber: number; status: string; errorCode?: string }): Promise<void>
-  markSent(messageId: string): Promise<void>
+  markSent(messageId: string, providerMessageId?: string): Promise<void>
   markFailed(messageId: string): Promise<void>
 }
 export type RetryQueue = { requeue(delaySeconds: number): Promise<void> }
@@ -11,7 +11,7 @@ export async function processMessage(input: { messageId: string; attemptNumber: 
   try {
     const result = await dependencies.provider.send(input.message)
     await dependencies.attempts.appendAttempt({ messageId: input.messageId, attemptNumber: input.attemptNumber, status: result.status })
-    if (result.accepted) { await dependencies.attempts.markSent(input.messageId); return 'sent' }
+    if (result.accepted) { await dependencies.attempts.markSent(input.messageId, result.externalId); return 'sent' }
     await dependencies.attempts.markFailed(input.messageId)
     return 'failed'
   } catch (error) {

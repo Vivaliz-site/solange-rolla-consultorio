@@ -15,6 +15,17 @@ AGE=$((NOW - MTIME))
 [ "$AGE" -ge 0 ] || fail clock_skew
 [ "$AGE" -le "$MAX_AGE" ] || fail stale
 LINE=$(cat "$LAST")
+# Verify *source provenance*, not merely freshness and checksums of a dump
+# from an unrelated local/retired database. The runtime ref is not a secret.
+EXPECTED_REF=${SOLANGE_BACKUP_EXPECTED_PROJECT_REF:-}
+if [ -z "$EXPECTED_REF" ]; then
+  EXPECTED_REF=$(docker exec solange-client-demo-web printenv SUPABASE_STAGING_PROJECT_REF 2>/dev/null || true)
+fi
+case "$EXPECTED_REF" in ''|*[!a-z0-9]*) fail source_provenance ;; esac
+[ "${#EXPECTED_REF}" -ge 16 ] && [ "${#EXPECTED_REF}" -le 40 ] || fail source_provenance
+SOURCE_KIND=$(printf '%s\n' "$LINE" | sed -n 's/.* source_kind=\([^ ]*\).*/\1/p')
+SOURCE_REF=$(printf '%s\n' "$LINE" | sed -n 's/.* source_ref=\([^ ]*\).*/\1/p')
+[ "$SOURCE_KIND" = managed_supabase ] && [ "$SOURCE_REF" = "$EXPECTED_REF" ] || fail source_provenance
 FULL=$(printf '%s\n' "$LINE" | sed -n 's/.* full=\([^ ]*\).*/\1/p')
 SUBSET=$(printf '%s\n' "$LINE" | sed -n 's/.* restore_subset=\([^ ]*\).*/\1/p')
 [ -n "$FULL" ] && [ -n "$SUBSET" ] || fail metadata

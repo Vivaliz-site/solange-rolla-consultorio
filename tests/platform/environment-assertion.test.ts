@@ -116,6 +116,46 @@ describe('environment isolation assertion', () => {
     expect(production.output).toContain('go-live gate')
   })
 
+  it('rejects production WhatsApp live when delivery reconciliation credentials are missing', () => {
+    const result = run({
+      APP_ENV: 'production',
+      SUPABASE_PROJECT_REF: 'production-ref',
+      SUPABASE_PRODUCTION_PROJECT_REF: 'production-ref',
+      NEXT_PUBLIC_SUPABASE_URL: 'https://production-ref.supabase.co',
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_production',
+      SUPABASE_SECRET_KEY: 'sb_secret_production',
+      GO_LIVE_APPROVED: 'true',
+      WHATSAPP_LIVE_ENABLED: 'true',
+      EMAIL_LIVE_ENABLED: 'false',
+      NFSE_LIVE_ENABLED: 'false',
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.output).toContain('WEBHOOK_SIGNING_SECRET_META_WHATSAPP')
+    expect(result.output).toContain('WEBHOOK_VERIFY_TOKEN_META_WHATSAPP')
+  })
+
+  it('accepts explicitly approved production WhatsApp only with full send and webhook configuration', () => {
+    const result = run({
+      APP_ENV: 'production',
+      SUPABASE_PROJECT_REF: 'production-ref',
+      SUPABASE_PRODUCTION_PROJECT_REF: 'production-ref',
+      NEXT_PUBLIC_SUPABASE_URL: 'https://production-ref.supabase.co',
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_production',
+      SUPABASE_SECRET_KEY: 'sb_secret_production',
+      GO_LIVE_APPROVED: 'true',
+      WHATSAPP_LIVE_ENABLED: 'true',
+      EMAIL_LIVE_ENABLED: 'false',
+      NFSE_LIVE_ENABLED: 'false',
+      WHATSAPP_ACCESS_TOKEN: 'synthetic-test-token',
+      WHATSAPP_PHONE_NUMBER_ID: 'synthetic-phone-number-id',
+      WEBHOOK_SIGNING_SECRET_META_WHATSAPP: 'synthetic-app-secret',
+      WEBHOOK_VERIFY_TOKEN_META_WHATSAPP: 'synthetic-verify-token',
+    })
+
+    expect(result.ok).toBe(true)
+  })
+
   it('rejects a remote URL that points at a different project ref', () => {
     const result = run({
       APP_ENV: 'staging',

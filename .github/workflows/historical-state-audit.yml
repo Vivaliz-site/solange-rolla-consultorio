@@ -83,6 +83,7 @@ jobs:
     env:
       EXPECTED_SHA: ${{ needs.eligibility.outputs.expected_sha }}
       STAGING_DEPLOY_ROOT: /home/ubuntu/solange-client-demo
+      STAGING_ACCEPTANCE_URL: http://127.0.0.1:3200
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_STAGING_PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
     steps:
@@ -98,9 +99,13 @@ jobs:
           set -Eeuo pipefail
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
           test "$(cat "$STAGING_DEPLOY_ROOT/state/deployed-sha.txt")" = "$EXPECTED_SHA"
-          URL=$(cat "$STAGING_DEPLOY_ROOT/state/current-url.txt")
+          URL="$STAGING_ACCEPTANCE_URL"
           payload=$(curl --fail --silent --show-error --retry 3 "$URL/api/health")
           test "$(printf '%s' "$payload" | jq -r '.buildSha')" = "$EXPECTED_SHA"
+
+      - name: Isolate npm cache per runner
+        shell: bash
+        run: echo "NPM_CONFIG_CACHE=$RUNNER_TEMP/npm-cache" >> "$GITHUB_ENV"
 
       - name: Use Node 24.19.0
         uses: actions/setup-node@v7
@@ -118,14 +123,14 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          python3 - "$STAGING_DEPLOY_ROOT/staging.env" "$STAGING_DEPLOY_ROOT/state/current-url.txt" "$EXPECTED_SHA" <<'PY'
+          python3 - "$STAGING_DEPLOY_ROOT/staging.env" "$STAGING_ACCEPTANCE_URL" "$EXPECTED_SHA" <<'PY'
           import os, pathlib, subprocess, sys
           values = {}
           for raw in pathlib.Path(sys.argv[1]).read_text().splitlines():
               if raw and not raw.startswith('#') and '=' in raw:
                   key, value = raw.split('=', 1)
                   values[key] = value
-          app_url = pathlib.Path(sys.argv[2]).read_text().strip().rstrip('/')
+          app_url = sys.argv[2].strip().rstrip('/')
           expected_sha = sys.argv[3]
           child = os.environ.copy()
           child.update(values)
@@ -151,14 +156,14 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          python3 - "$STAGING_DEPLOY_ROOT/staging.env" "$STAGING_DEPLOY_ROOT/state/current-url.txt" "$EXPECTED_SHA" <<'PY'
+          python3 - "$STAGING_DEPLOY_ROOT/staging.env" "$STAGING_ACCEPTANCE_URL" "$EXPECTED_SHA" <<'PY'
           import os, pathlib, subprocess, sys
           values = {}
           for raw in pathlib.Path(sys.argv[1]).read_text().splitlines():
               if raw and not raw.startswith('#') and '=' in raw:
                   key, value = raw.split('=', 1)
                   values[key] = value
-          app_url = pathlib.Path(sys.argv[2]).read_text().strip().rstrip('/')
+          app_url = sys.argv[2].strip().rstrip('/')
           expected_sha = sys.argv[3]
           child = os.environ.copy()
           child.update(values)

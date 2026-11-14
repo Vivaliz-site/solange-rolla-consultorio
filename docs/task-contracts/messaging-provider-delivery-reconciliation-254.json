@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "status": "approved",
+  "issue": 254,
+  "migration": "20261001093000_messaging_provider_delivery_reconciliation.sql",
+  "owners": ["messaging"],
+  "objects": [
+    {"name": "public.outbound_messages", "owner": "messaging"},
+    {"name": "public.inbox_events", "owner": "messaging"},
+    {"name": "public.apply_message_provider_delivery_status", "owner": "messaging"},
+    {"name": "public.record_message_provider_acceptance", "owner": "messaging"}
+  ]
+}

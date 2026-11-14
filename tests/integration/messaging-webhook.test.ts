@@ -1,11 +1,51 @@
-import { describe, expect, it } from 'vitest'
-import { createMessagingWebhookHandler, type WebhookProvider } from '../../src/app/api/webhooks/messaging/[provider]/route'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { GET, POST, createMessagingWebhookHandler, type WebhookProvider } from '../../src/app/api/webhooks/messaging/[provider]/route'
 
 function providerReturning(event: unknown): WebhookProvider {
   return { verifyWebhook: async () => event as never }
 }
 
 describe('messaging webhook route', () => {
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('completes the Meta webhook verification challenge with the configured token', async () => {
+    vi.stubEnv('WEBHOOK_VERIFY_TOKEN_META_WHATSAPP', 'synthetic-verify-token')
+    const response = await GET(
+      new Request('https://example.test/api/webhooks/messaging/meta-whatsapp?hub.mode=subscribe&hub.verify_token=synthetic-verify-token&hub.challenge=challenge-123'),
+      { params: Promise.resolve({ provider: 'meta-whatsapp' }) },
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.text()).resolves.toBe('challenge-123')
+  })
+
+  it('rejects an invalid Meta webhook verification token', async () => {
+    vi.stubEnv('WEBHOOK_VERIFY_TOKEN_META_WHATSAPP', 'synthetic-verify-token')
+    const response = await GET(
+      new Request('https://example.test/api/webhooks/messaging/meta-whatsapp?hub.mode=subscribe&hub.verify_token=wrong&hub.challenge=x'),
+      { params: Promise.resolve({ provider: 'meta-whatsapp' }) },
+    )
+
+    expect(response.status).toBe(403)
+  })
+
+  it('returns not found for unsupported webhook providers', async () => {
+    const response = await POST(
+      new Request('https://example.test/api/webhooks/messaging/unknown', { method: 'POST', body: '{}' }),
+      { params: Promise.resolve({ provider: 'unknown' }) },
+    )
+    expect(response.status).toBe(404)
+  })
+
+  it('fails closed before database access when the Meta signing secret is absent', async () => {
+    vi.stubEnv('WEBHOOK_SIGNING_SECRET_META_WHATSAPP', '')
+    const response = await POST(
+      new Request('https://example.test/api/webhooks/messaging/meta-whatsapp', { method: 'POST', body: '{}' }),
+      { params: Promise.resolve({ provider: 'meta-whatsapp' }) },
+    )
+    expect(response.status).toBe(503)
+  })
+
   it('rejects an invalid signature before persisting anything', async () => {
     let inserts = 0
     const handler = createMessagingWebhookHandler(

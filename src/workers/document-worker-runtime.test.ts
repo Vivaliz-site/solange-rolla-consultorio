@@ -62,4 +62,77 @@ describe('document worker runtime', () => {
     expect(drain).toHaveBeenCalledTimes(1)
     expect(wait).not.toHaveBeenCalled()
   })
+
+  it('continues draining queued work when dispatch fails without refreshing a healthy heartbeat', async () => {
+    const controller = new AbortController()
+    const dispatch = vi.fn(async () => { throw new Error('DOCUMENT_DISPATCH_UNAVAILABLE') })
+    const drain = vi.fn(async () => { controller.abort(); return 1 })
+    const wait = vi.fn(async () => undefined)
+    const logger = vi.fn()
+    const heartbeat = vi.fn(async () => undefined)
+
+    await runDocumentWorker({ signal: controller.signal, dispatch, drain, wait, logger, heartbeat, pollMs: 250 })
+
+    expect(dispatch).toHaveBeenCalledTimes(1)
+    expect(drain).toHaveBeenCalledTimes(1)
+    expect(heartbeat).not.toHaveBeenCalled()
+    expect(logger).toHaveBeenCalledWith('document_worker_dispatch_failed', { code: 'DOCUMENT_DISPATCH_UNAVAILABLE' })
+    expect(logger).toHaveBeenCalledWith('document_worker_poll_ok', { completed: 1, dispatchOk: false })
+  })
+
+  it('refreshes the heartbeat again after the dispatcher recovers', async () => {
+    const controller = new AbortController()
+    let dispatchAttempt = 0
+    let drainAttempt = 0
+    const dispatch = vi.fn(async () => {
+      dispatchAttempt += 1
+      if (dispatchAttempt === 1) throw new Error('DOCUMENT_DISPATCH_UNAVAILABLE')
+    })
+    const drain = vi.fn(async () => {
+      drainAttempt += 1
+      if (drainAttempt === 2) controller.abort()
+      return 0
+    })
+    const wait = vi.fn(async () => undefined)
+    const heartbeat = vi.fn(async () => undefined)
+
+    await runDocumentWorker({ signal: controller.signal, dispatch, drain, wait, heartbeat, pollMs: 250 })
+
+    expect(dispatch).toHaveBeenCalledTimes(2)
+    expect(drain).toHaveBeenCalledTimes(2)
+    expect(heartbeat).toHaveBeenCalledTimes(1)
+  })
+
+  it('dispatches pending outbox jobs before draining the queue', async () => {
+    const controller = new AbortController()
+    const order: string[] = []
+    const dispatch = vi.fn(async () => { order.push('dispatch') })
+    const drain = vi.fn(async () => { order.push('drain'); controller.abort(); return 0 })
+    const wait = vi.fn(async () => undefined)
+
+    await runDocumentWorker({ signal: controller.signal, dispatch, drain, wait, pollMs: 250 })
+
+    expect(dispatch).toHaveBeenCalledTimes(1)
+    expect(drain).toHaveBeenCalledTimes(1)
+    expect(order).toEqual(['dispatch', 'drain'])
+  })
+
+  it('cleans abort listeners between successful worker polls', async () => {
+    const controller = new AbortController()
+    const addListener = vi.spyOn(controller.signal, 'addEventListener')
+    const removeListener = vi.spyOn(controller.signal, 'removeEventListener')
+    let cycles = 0
+    const drain = vi.fn(async () => {
+      cycles += 1
+      if (cycles === 3) controller.abort()
+      return 0
+    })
+
+    await runDocumentWorker({ signal: controller.signal, drain, pollMs: 250 })
+
+    expect(drain).toHaveBeenCalledTimes(3)
+    expect(addListener.mock.calls.filter(([event]) => event === 'abort')).toHaveLength(2)
+    expect(removeListener.mock.calls.filter(([event]) => event === 'abort')).toHaveLength(2)
+  }, 3000)
+
 })

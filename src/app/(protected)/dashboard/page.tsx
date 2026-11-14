@@ -93,7 +93,7 @@ export default async function DashboardPage() {
   const now = new Date()
   const horizon = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-  const [appointments, receivables, events, people] = await Promise.all([
+  const [appointments, receivables, events, people, failedMessages] = await Promise.all([
     supabase.from('appointments').select('id', { count: 'exact', head: true })
       .gte('starts_at', now.toISOString()).lt('starts_at', horizon.toISOString()),
     supabase.from('receivables').select('original_amount_cents,status,payments(amount_cents)')
@@ -101,9 +101,10 @@ export default async function DashboardPage() {
     supabase.from('events').select('id', { count: 'exact', head: true })
       .gte('starts_at', now.toISOString()).neq('status', 'cancelled'),
     supabase.from('people').select('id', { count: 'exact', head: true }),
+    supabase.from('outbound_messages').select('id', { count: 'exact', head: true }).eq('status', 'failed'),
   ])
 
-  const firstError = [appointments.error, receivables.error, events.error, people.error].find(Boolean)
+  const firstError = [appointments.error, receivables.error, events.error, people.error, failedMessages.error].find(Boolean)
   if (firstError) throw new Error(`DASHBOARD_READ_FAILED:${firstError.code}`)
   const openReceivablesCents = (receivables.data ?? []).reduce((sum, row) => {
     const paid = (row.payments ?? []).reduce((paidSum, payment) => paidSum + payment.amount_cents, 0)
@@ -167,6 +168,8 @@ export default async function DashboardPage() {
       openReceivablesCents={openReceivablesCents}
       upcomingEvents={events.count ?? 0}
       peopleCount={people.count ?? 0}
+      failedMessages={failedMessages.count ?? 0}
+      canViewMessaging={session.role === 'psychologist_owner' || session.role === 'secretary'}
     />
     <TaskQueueView
       entries={taskQueue}

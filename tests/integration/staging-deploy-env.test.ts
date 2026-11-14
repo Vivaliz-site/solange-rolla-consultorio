@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
@@ -45,10 +46,12 @@ describe('staging database endpoint readiness', () => {
 })
 
 describe('staging runtime URL and reconciler contract', () => {
-  it('builds the candidate with the current external staging URL', () => {
+  it('uses a stable runner-local URL for staging runtime and acceptance', () => {
     const deploy = workflow.slice(workflow.indexOf('- name: Deploy exact SHA to homologation'))
-    expect(deploy).toContain('"$ROOT/state/current-url.txt"')
+    expect(workflow).toContain('STAGING_ACCEPTANCE_URL: http://127.0.0.1:3200')
     expect(deploy).toContain("'APP_URL': app_url")
+    expect(deploy).not.toContain('"$ROOT/state/current-url.txt"')
+    expect(deploy).toContain('URL="$STAGING_ACCEPTANCE_URL"')
   })
 
   it('normalizes web, tunnel, and reconciler restart policies before the app swap', () => {
@@ -89,4 +92,26 @@ describe('staging cloud homologation data contract', () => {
     expect(deploy).toContain("'SUPABASE_ACCESS_TOKEN': os.environ['SUPABASE_ACCESS_TOKEN']")
     expect(deploy).not.toContain("'E2E_ALLOWED_DB_URL': values['DB_URL']")
   })
+})
+
+describe('staging exact-release runtime parity self-tests', () => {
+  it('executes adversarial runtime parity and public release regressions in CI', () => {
+    const result = spawnSync('python3', ['-m', 'unittest', 'tests.test_staging_runtime_parity'], {
+      encoding: 'utf8',
+      timeout: 120_000,
+      env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' },
+    })
+    expect(result.error, result.stderr || 'python3 execution failed').toBeUndefined()
+    expect(result.status, [result.stdout, result.stderr].join('\n')).toBe(0)
+  }, 120_000)
+
+  it('runs synthetic env snapshot/rollback/finalize fault-injection regressions in CI', () => {
+    const result = spawnSync('python3', ['-m', 'unittest', 'tests.test_staging_env_transaction'], {
+      encoding: 'utf8',
+      timeout: 120_000,
+      env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' },
+    })
+    expect(result.error, result.stderr || 'python3 execution failed').toBeUndefined()
+    expect(result.status, [result.stdout, result.stderr].join('\n')).toBe(0)
+  }, 120_000)
 })

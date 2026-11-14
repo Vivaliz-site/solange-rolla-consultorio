@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "status": "approved",
+  "issue": 210,
+  "migration": "20261114093000_events_atomic_audit.sql",
+  "owners": [
+    "audit",
+    "events",
+    "receivables"
+  ],
+  "objects": [
+    {
+      "name": "public.events",
+      "owner": "events"
+    },
+    {
+      "name": "public.event_registrations",
+      "owner": "events"
+    },
+    {
+      "name": "public.event_expenses",
+      "owner": "events"
+    },
+    {
+      "name": "public.create_event_atomic",
+      "owner": "events"
+    },
+    {
+      "name": "public.update_event_atomic",
+      "owner": "events"
+    },
+    {
+      "name": "public.register_event_participant_atomic",
+      "owner": "events"
+    },
+    {
+      "name": "public.update_event_registration_atomic",
+      "owner": "events"
+    },
+    {
+      "name": "public.create_event_expense_atomic",
+      "owner": "events"
+    },
+    {
+      "name": "public.receivables",
+      "owner": "receivables"
+    },
+    {
+      "name": "public.audit_events",
+      "owner": "audit"
+    }
+  ]
+}

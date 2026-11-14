@@ -5,5 +5,12 @@ export { renderTemplate, MESSAGE_TEMPLATE_KEYS, type MessageTemplate, type Messa
 export { renderVersionedTemplate, type TemplateRepository } from './application/render-template'
 export { createMockProvider, type MessagingProvider, type ProviderDeliveryResult, type ProviderMessage } from './infrastructure/mock-provider'
 export { processMessage, type MessageAttemptRepository, type RetryQueue } from './application/process-message'
-export { ingestProviderEvent, type ProviderEventRepository } from './application/ingest-provider-event'
+export {
+  ingestProviderEvent,
+  type DeliveryStatus,
+  type ProviderDeliveryUpdate,
+  type ProviderEventRepository,
+} from './application/ingest-provider-event'
 export { createMessagingWebhookHandler, type WebhookProvider } from './application/create-webhook-handler'
+export { createMetaWhatsAppWebhookProvider } from './infrastructure/meta-whatsapp-webhook-provider'
+export { createSupabaseProviderEventRepository } from './infrastructure/supabase-provider-event-repository'

@@ -54,10 +54,31 @@ interface NfseProvider {
 
 Ambientes:
 - mock local;
-- produção restrita/homologação;
-- live somente após gate fiscal.
+- Produção Restrita/homologação;
+- produção somente após gate fiscal.
 
-Persistir request fingerprint/idempotency key, protocolo, external id, status e caminhos privados de XML/PDF.
+### Contrato nacional
+
+O adapter real é da **SEFIN Nacional**. Não usar o antigo placeholder `/documents` nem autenticação Bearer.
+
+Contrato de transporte:
+- autenticação mútua TLS com certificado ICP-Brasil fornecido por secret store externo;
+- documentos fiscais em XML assinado XMLDSIG;
+- XML compactado GZip e representado em Base64 dentro do envelope JSON;
+- Produção Restrita: `https://sefin.producaorestrita.nfse.gov.br/API/SefinNacional`;
+- produção: `https://sefin.nfse.gov.br/SefinNacional`.
+
+Operações implementadas no adapter:
+- `POST /nfse` com `dpsXmlGZipB64`;
+- `GET /nfse/{chaveAcesso}`;
+- `GET /dps/{id}` para reconciliação de emissão ambígua;
+- `POST /nfse/{chaveAcesso}/eventos` com `pedidoRegistroEventoXmlGZipB64` para cancelamento.
+
+A construção fiscal da DPS/evento, validação XSD, XMLDSIG e acesso ao certificado ficam fora do domínio e entram pelo `NationalNfsePayloadFactory`. O transporte mTLS entra por `NationalNfseTransport`. Ausência de qualquer uma dessas dependências falha fechado com `NFSE_CONFIGURATION_REQUIRED`.
+
+POST fiscal nunca deve ser repetido cegamente após timeout/5xx. Primeiro reconciliar pelo ID da DPS; sem confirmação, manter estado ambíguo/recuperável.
+
+Persistir request fingerprint/idempotency key, protocolo/ID DPS, chave de acesso, status e caminhos privados de XML/PDF. Nunca logar XML bruto, certificado, chave privada, CPF/CNPJ ou payload integral do provider.
 
 ## 4. Site solangerolla.com.br
 
