@@ -116,4 +116,23 @@ describe('document worker runtime', () => {
     expect(drain).toHaveBeenCalledTimes(1)
     expect(order).toEqual(['dispatch', 'drain'])
   })
+
+  it('cleans abort listeners between successful worker polls', async () => {
+    const controller = new AbortController()
+    const addListener = vi.spyOn(controller.signal, 'addEventListener')
+    const removeListener = vi.spyOn(controller.signal, 'removeEventListener')
+    let cycles = 0
+    const drain = vi.fn(async () => {
+      cycles += 1
+      if (cycles === 3) controller.abort()
+      return 0
+    })
+
+    await runDocumentWorker({ signal: controller.signal, drain, pollMs: 250 })
+
+    expect(drain).toHaveBeenCalledTimes(3)
+    expect(addListener.mock.calls.filter(([event]) => event === 'abort')).toHaveLength(2)
+    expect(removeListener.mock.calls.filter(([event]) => event === 'abort')).toHaveLength(2)
+  }, 3000)
+
 })
