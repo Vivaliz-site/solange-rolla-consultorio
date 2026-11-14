@@ -632,3 +632,15 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: testes unitarios, pgTAP/Database, CI oficial, merge protegido, readback SHA e release com UI grafica #98. Migracao DB/Auth/Storage da Marina #340 e backup/restore #191 requerem grant P2 e lease efetivos. Nenhuma mutacao externa ou Clinica executada.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-14 — [GPT] Restaurar marcador de Quick Tunnel sem reinicio indevido — #298
+
+- Base main: `c55557a1a326c1c123f5e97337e735a65adc7058`. Escopo: `ops/staging/reconcile-demo.sh`, regressao de URL publica e restart; nenhuma alteracao em dados clinicos, banco, jobs, acessos ou politicas.
+- Causa raiz: apos interrupcao de health publico, o reconciliador apaga o marcador de URL. Mesmo com o `APP_URL` ja aplicado e a saude restaurada, tentava reiniciar a web novamente; a indisponibilidade ou falha desse restart podia manter um falso-erro e causar parada desnecessaria. Inversamente, apenas comparar o arquivo `APP_URL` nao comprova que restart anterior teve sucesso.
+- Correcao: persistir `applied-url.txt` somente apos restart + health comprovados (ou inicializar a partir do marcador valido legado), restaurar marcador sem restart quando a URL aplicada ja coincide com o tunnel saudavel, e manter retry/restart quando configuracao mudou e restart anterior falhou. Sem novos gates ou restricoes.
+- RED reproduzido na branch com somente regressao: `tests/staging-reconcile-public-health.sh` falhou `recuperacao de marker reiniciou web sem mudar APP_URL` (MCP task `53789328-fec2-4916-95a1-602a7260438e`, exit da tarefa 0 por confirmar falha esperada).
+- GREEN inicial: 3 suites shell de staging PASS, 23 testes de paridade e 12 de transacao de ambiente PASS, shell `sh -n` e `git diff --check` PASS (MCP task `ca058caa-19a7-41a0-966b-24589e4484f2`). Regressao de erro no restart original preservada; nao confundir sintese offline com UI E2E.
+- Pendencias: reexecutar regressao no HEAD definitivo, CI oficial, merge com branch protections, confirmar staging exact-SHA e jornada grafica real em navegador antes de qualquer APTO. Migracao clinica/backup independente ainda depende de grant P2 efetivo; nao disparada.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
