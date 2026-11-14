@@ -439,8 +439,8 @@ jobs:
               raise SystemExit(result.returncode)
           PY
 
-          docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp -e npm_config_cache=/tmp/.npm -v "$STAGE:/app" -w /app node:24-bookworm-slim npm ci
-          docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp -e npm_config_cache=/tmp/.npm -v "$STAGE:/app" -w /app node:24-bookworm-slim npm run build
+          docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp -e npm_config_cache=/tmp/.npm -v "$STAGE:/app" -w /app node:24.19.0-bookworm-slim npm ci
+          docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp -e npm_config_cache=/tmp/.npm -v "$STAGE:/app" -w /app node:24.19.0-bookworm-slim npm run build
           test -f "$STAGE/package.json"
           test -f "$STAGE/.env.production.local"
           test -s "$STAGE/.next/BUILD_ID"
@@ -466,7 +466,7 @@ jobs:
             --env-file "$RUNTIME_ENV" \
             -v "$APP:/app" \
             -w /app \
-            node:24-bookworm-slim npm run start -- --hostname 127.0.0.1 --port 3200 >/dev/null
+            node:24.19.0-bookworm-slim npm run start -- --hostname 127.0.0.1 --port 3200 >/dev/null
           docker update --restart unless-stopped "$RECONCILER" "$TUNNEL" >/dev/null
           docker restart "$RECONCILER" >/dev/null
 

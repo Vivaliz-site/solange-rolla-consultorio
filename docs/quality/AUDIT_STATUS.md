@@ -643,3 +643,15 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: CI oficial, merge apos branch protection, release staging exact-SHA, UI grafica E2E e verificacao de persistencia no browser. Migracao clinica/backup depende de grant P2 owner-scoped efetivo; nao executada.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-14 — [GPT] Fixar patch Node 24.19.0 no staging web — issue #189
+
+- Base SHA: 5e17c19ebe9825a544b143d3b2e1a2c67f406840
+- Impacto: Reconciliada a branch historica agent/189-pin-web-node-runtime com main sem descartar commits posteriores. Tres usos de imagem Node web no staging-promote (npm ci, build, runtime) passam da tag mutavel 24 para 24.19.0, paridade com package.json e tres Dockerfiles workers; nenhuma alteracao em DB, Auth/MFA, dados clinicos, grant, politica, restricao ou servico publicado.
+- Testes: RED observado no main: as 3 referencias usam node:24-bookworm-slim, incompatíveis com o patch exigido. GREEN estatico na branch: 3 referencias web exatas 24.19.0 e 3 workers no mesmo patch; regressao Vitest node-runtime-parity.test.ts recuperada da branch antiga. Suites completas, CI, merge e release staging ainda sujeitos a readback.
+- Evidencias: issue https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/189; branch existente agent/189-pin-web-node-runtime; main base 5e17c19ebe9825a544b143d3b2e1a2c67f406840; MCP task 88246796-0012-4e2c-bf2f-636da5abd5f1 comprovou RED/GREEN estatico; validar Vitest antes da PR.
+- Pendencias: validar Vitest e CI no HEAD final, revisar diff, integrar via gates do GitHub, confirmar SHA em main e publicar apenas pelo fluxo staging canônico com prova de versao Node e E2E grafico. A migracao da fonte Supabase gerenciada para Marina segue condicionada ao P2 clinico e backup/restore independente.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
