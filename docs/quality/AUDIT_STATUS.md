@@ -591,7 +591,7 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 <!-- AUDIT_DELTA_V1 -->
 ## 2026-11-13 — [GPT] Recuperar corrida de merge concorrente no CI da Solange — P1
 
-- Base SHA: 5b8d02d91b9045f3865e22178b4f89cf0668aa31
+- Base SHA: 47209c826397cd39891582c810b3432727756818
 - Impacto: O workflow `.github/workflows/pr-auto-merge.yml` verificava que a PR ainda estava aberta por `jq -e` sem capturar a falha. A PR #347 foi integrada por outro executor às 02:08:32 UTC de 14/11 enquanto o job de auto-merge verificava o mesmo HEAD, fazendo o job falhar às 02:08:34 UTC, embora a integração já estivesse concluída. O fluxo agora sai normalmente para um candidato que deixou de ser elegível e, quando a API confirma merge no HEAD exato, encaminha o SHA de main à revalidação pós-merge existente. Não altera a lista de checks exigidos, aprovação, branch protection, políticas de segurança, grants ou a seleção de merges.
 - Testes: RED reproduzido em simulação isolada com `jq -e` sobre fixture de PR `closed`: exit 1 no código original. GREEN com o tratamento condicional: a PR encerrada é ignorada sem erro e a fixture `open` com HEAD correspondente continua elegível. Teste de contrato adicionado em `tests/integration/pr-auto-merge-post-merge.test.ts`. Testes de suite/CI e validação do SHA mesclado exigem readback independente antes de declarar GREEN oficial.
 - Evidencias: workflow https://github.com/Vivaliz-site/solange-rolla-consultorio/actions/runs/43544605679/job/132292855644; merge da PR #347 em https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/347; testes de fixtures `closed/open` executados localmente sem rede, dados clínicos ou escrita em serviços.
