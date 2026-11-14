@@ -160,6 +160,11 @@
     "runtime_role_privilege_hardening": [
       "audit",
       "forms"
+    ],
+    "finance_remaining_atomic_audit": [
+      "audit",
+      "payables",
+      "receivables"
     ]
   },
   "objects": {
@@ -248,6 +253,11 @@
     "public.audit_person_updated": "audit",
     "public.create_recurring_payable_atomic": "payables",
     "public.apply_message_provider_delivery_status": "messaging",
-    "public.record_message_provider_acceptance": "messaging"
+    "public.record_message_provider_acceptance": "messaging",
+    "public.apply_receivable_adjustment_atomic": "receivables",
+    "public.create_payable_atomic": "payables",
+    "public.create_recurrence_rule_atomic": "payables",
+    "public.create_vendor_atomic": "payables",
+    "public.create_expense_category_atomic": "payables"
   }
 }

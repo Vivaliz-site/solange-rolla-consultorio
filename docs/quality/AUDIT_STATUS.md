@@ -598,3 +598,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: conferir CI e governança para a PR técnica, revisão do diff, integração protegida e readback do main; validação de staging/UI da Solange e migração do Supabase gerenciado para Marina continuam NÃO APTAS até backup/restore independente e grant P2 efetivo, sem bypass.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-14 — [GPT] Recuperar correcao P1 de atomicidade financeira — issue #211
+
+- Base SHA: 5e597d905485dc94b9114528a0379fedefed330a
+- Impacto: recupera e reconcilia sobre main vigente a correcao tecnica da antiga PR #221, encerrada sem merge, para cinco mutacoes financeiras: ajuste de recebivel, criacao de contas a pagar, regras de recorrencia, fornecedores e categorias. Cada RPC usa transacao SQL unica para dado de negocio e trilha de auditoria; as politicas RLS e identidades permanecem vigentes. Os deltas novos de messaging e runtime role hardening de main foram preservados na reconciliacao de schema e tipos. A migration antiga nao havia sido integrada e foi renumerada para data posterior a todas as migrations vigentes, sem editar migration ja aplicada. Nao altera grants P2, ambiente clinico, integracoes live, restricoes ou gates.
+- Testes: RED real sobre main reproduziu a falta dos cinco RPCs; apos recuperar o patch, GREEN 3/3 regressao dirigida, npm ci PASS, lint PASS, typecheck PASS, modules:check PASS. O migrations:check detectou corretamente timestamp anterior a migration aplicada (RED), renumerado para 20261114033000 e exige novo GREEN. Regressoes, arquitetura, build, Database/pgTAP e CI oficiais no SHA final serao verificados antes do merge; testes pendentes nao sao declarados verdes.
+- Evidencias: issue https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/211; PR historica https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/221 fechada sem merge; checkout isolado /home/ubuntu/sv-hourly-finance211-20261114 na VM Marina; MCP audits b4b833c8-7556-433a-8352-c9e372f69520 (RED) e 2aaece57-bc7f-48aa-b0a3-478939179330 (reconciliacao). Lease/fencing exclusivo adquirido na VM Marina com owner gpt-hour-corrective-finance211-20261114.
+- Pendencias: validar migrations:check, arquitetura, build, regressao completa, testes SQL/pgTAP em banco descartavel e CI oficial; publicar PR tecnica, reconciliar main concorrente, integrar apenas com gates e revisoes devidas, revalidar SHA efetivo no ambiente e UI #98. A migracao Supabase #191/#340 requer grant P2 efetivo e lease separados, nao concedidos por esta correcao. Amazon Returns #630 permanece independente; nenhuma compensacao executada. Mercado Livre Returns Recovery continua pausado.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
