@@ -636,11 +636,11 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 <!-- AUDIT_DELTA_V1 -->
 ## 2026-11-14 — [GPT] Restaurar marcador de Quick Tunnel sem reinicio indevido — #298
 
-- Base main: `c55557a1a326c1c123f5e97337e735a65adc7058`. Escopo: `ops/staging/reconcile-demo.sh`, regressao de URL publica e restart; nenhuma alteracao em dados clinicos, banco, jobs, acessos ou politicas.
-- Causa raiz: apos interrupcao de health publico, o reconciliador apaga o marcador de URL. Mesmo com o `APP_URL` ja aplicado e a saude restaurada, tentava reiniciar a web novamente; a indisponibilidade ou falha desse restart podia manter um falso-erro e causar parada desnecessaria. Inversamente, apenas comparar o arquivo `APP_URL` nao comprova que restart anterior teve sucesso.
-- Correcao: persistir `applied-url.txt` somente apos restart + health comprovados (ou inicializar a partir do marcador valido legado), restaurar marcador sem restart quando a URL aplicada ja coincide com o tunnel saudavel, e manter retry/restart quando configuracao mudou e restart anterior falhou. Sem novos gates ou restricoes.
-- RED reproduzido na branch com somente regressao: `tests/staging-reconcile-public-health.sh` falhou `recuperacao de marker reiniciou web sem mudar APP_URL` (MCP task `53789328-fec2-4916-95a1-602a7260438e`, exit da tarefa 0 por confirmar falha esperada).
-- GREEN inicial: 3 suites shell de staging PASS, 23 testes de paridade e 12 de transacao de ambiente PASS, shell `sh -n` e `git diff --check` PASS (MCP task `ca058caa-19a7-41a0-966b-24589e4484f2`). Regressao de erro no restart original preservada; nao confundir sintese offline com UI E2E.
-- Pendencias: reexecutar regressao no HEAD definitivo, CI oficial, merge com branch protections, confirmar staging exact-SHA e jornada grafica real em navegador antes de qualquer APTO. Migracao clinica/backup independente ainda depende de grant P2 efetivo; nao disparada.
+- Base SHA: c55557a1a326c1c123f5e97337e735a65adc7058
+- Impacto: Corrige a recuperacao da URL publica em ops/staging/reconcile-demo.sh: nao reiniciar web saudavel apenas porque current-url.txt foi invalidado apos indisponibilidade externa. Aplicar applied-url.txt somente apos restart com sucesso e health valido; manter restart de retry quando APP_URL mudou mas nao foi aplicado. Sem novos gates, restricoes, permissoes ou alteracoes clinicas.
+- Testes: RED em 2f4b1446af0dd2cd8f35a6b010e85b6b899cf486 (restart indevido reproduzido); GREEN no HEAD com 3 suites shell PASS, 23 testes de paridade de staging, 12 testes de transacao de ambiente, 28 testes do ledger e sh -n/git diff --check PASS. Cenario de restart falho preservado.
+- Evidencias: MCP task RED 53789328-fec2-4916-95a1-602a7260438e; GREEN final fc692edb-6263-4a64-9c8c-f9f2b941c374 exit_code=0; commit funcional 24b18e9a3915268fdacf52d22fa450da8c8401a4; PR https://github.com/Vivaliz-site/solange-rolla-consultorio/pull/353. Shellcheck nao instalado, sem prova dessa ferramenta.
+- Pendencias: CI oficial, merge apos branch protection, release staging exact-SHA, UI grafica E2E e verificacao de persistencia no browser. Migracao clinica/backup depende de grant P2 owner-scoped efetivo; nao executada.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
