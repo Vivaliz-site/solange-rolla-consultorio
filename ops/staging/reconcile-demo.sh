@@ -87,7 +87,14 @@ reconcile_url() {
   fi
   current=$(sed -n 's/^APP_URL=//p' "$APP/.env.production.local" | tail -1)
   marker=$(cat "$URL_FILE" 2>/dev/null || true)
-  [ "$current" = "$url" ] && [ "$marker" = "$url" ] && return 0
+  if [ "$current" = "$url" ]; then
+    [ "$marker" = "$url" ] && return 0
+    # A URL do app ja corresponde ao tunnel publico saudavel. Recuperar
+    # somente o marker evita restart e indisponibilidade desnecessarios.
+    printf '%s\n' "$url" > "$URL_FILE"
+    log 'public health recovered; URL marker restored without web restart'
+    return 0
+  fi
 
   if [ "$current" != "$url" ]; then
     log "tunnel URL changed; updating APP_URL"
