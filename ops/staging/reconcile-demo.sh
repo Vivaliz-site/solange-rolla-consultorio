@@ -18,6 +18,35 @@ current_tunnel_url() {
   [ -n "$started" ] || return 0
   docker logs --since "$started" --tail 300 solange-demo-tunnel 2>&1 | grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com' | tail -1 || true
 }
+public_health_ok() {
+  # docker:27-cli nao possui curl. O web container usa Node 24, com DNS e TLS
+  # verificados pelo fetch nativo. Nao aceitar redirects, HTML ou status 200
+  # sem o contrato JSON da API de health.
+  case "$1" in
+    https://*.trycloudflare.com) ;;
+    *) return 1 ;;
+  esac
+  docker exec "$WEB" node -e '
+    (async () => {
+      const response = await fetch(process.argv[1], {
+        redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(8000),
+      });
+      if (response.status !== 200) { process.exitCode = 1; return; }
+      const body = await response.json();
+      if (body?.status !== "ok" || typeof body?.buildSha !== "string") {
+        process.exitCode = 1;
+      }
+    })().catch(() => { process.exitCode = 1; });
+  ' "$1/api/health" >/dev/null 2>&1
+}
+report_public_failure() {
+  # O erro de autenticacao e extraido dos logs, sem copiar URLs de segredo.
+  if docker logs --tail 40 solange-demo-tunnel 2>&1 | grep -qi 'Unauthorized: Tunnel not found'; then
+    log 'cloudflared Unauthorized: Tunnel not found; revisar credencial/tunnel pelo canal autorizado'
+  else
+    log 'tunnel public DNS/TLS/health unavailable; verificar logs e rota publica'
+  fi
+}
 ensure_running() {
   for c in solange-demo-gateway solange-demo-tunnel; do
     state=$(docker inspect -f '{{.State.Status}}' "$c" 2>/dev/null || true)
@@ -38,9 +67,24 @@ ensure_running() {
 }
 
 reconcile_url() {
-  app_valid || { log 'app incomplete; URL reconcile deferred'; return 0; }
+  app_valid || {
+    rm -f "$URL_FILE"
+    log 'app incomplete; public URL marker invalidated'
+    return 0
+  }
   url=$(current_tunnel_url)
-  [ -n "$url" ] || { log 'tunnel URL unavailable'; return 0; }
+  [ -n "$url" ] || {
+    rm -f "$URL_FILE"
+    report_public_failure
+    log 'tunnel URL unavailable; public URL marker invalidated'
+    return 0
+  }
+  if ! public_health_ok "$url"; then
+    rm -f "$URL_FILE"
+    report_public_failure
+    log 'URL marker invalidated because public health is unavailable'
+    return 0
+  fi
   current=$(sed -n 's/^APP_URL=//p' "$APP/.env.production.local" | tail -1)
   marker=$(cat "$URL_FILE" 2>/dev/null || true)
   [ "$current" = "$url" ] && [ "$marker" = "$url" ] && return 0
@@ -53,14 +97,18 @@ reconcile_url() {
       printf 'APP_URL=%s\n' "$url" >> "$APP/.env.production.local"
     fi
   fi
-  # Confirmar o reinicio antes de publicar a URL. Se ele falhar, o loop
-  # tentara novamente, mesmo que a configuracao APP_URL ja tenha mudado.
   if ! docker restart "$WEB" >/dev/null; then
-    log 'web restart failed; URL marker unchanged; retry scheduled'
+    rm -f "$URL_FILE"
+    log 'web restart failed; public URL marker invalidated; retry scheduled'
+    return 0
+  fi
+  if ! public_health_ok "$url"; then
+    rm -f "$URL_FILE"
+    log 'public health failed after web restart; URL marker invalidated'
     return 0
   fi
   printf '%s\n' "$url" > "$URL_FILE"
-  log "web restarted for $url"
+  log "web restarted and public health confirmed for $url"
 }
 
 while :; do

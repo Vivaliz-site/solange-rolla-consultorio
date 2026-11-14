@@ -24,3 +24,20 @@
 
 Não registrar segredos, tokens, XML fiscal bruto, respostas, diagnósticos ou
 identificadores pessoais completos no incidente.
+
+## Quick Tunnel do staging: marcador publico indisponivel (#268)
+
+A existencia do processo `solange-demo-tunnel` ou um health local 200 nao
+comprova publicacao externa. O reconciliador extrai apenas a URL do ciclo
+ativo e testa a URL publica em `/api/health`, exigindo DNS, TLS valido,
+HTTP 200 sem redirect e JSON de health do aplicativo. A consulta usa Node
+24 no container web, pois `docker:27-cli` nao inclui curl.
+
+Quando o health publico falha, o arquivo `state/current-url.txt` e
+invalidado para nao divulgar uma URL revogada como pronta. A URL volta a
+ser publicada somente apos validacao publica e restart do web confirmados.
+Examinar os logs sanitizados do reconciliador e do `cloudflared`;
+`Unauthorized: Tunnel not found` exige revisar a autorizacao do tunel
+no provedor, sem revelar tokens nem trocar credenciais por conta propria.
+Nao tomar health local ou container running como substituto de E2E grafico.
+Para operacoes no ambiente real, observar ownership/lease antes de reiniciar.
