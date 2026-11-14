@@ -71,7 +71,15 @@ TEST_TUNNEL=none; export TEST_TUNNEL
 reconcile_url
 [ ! -f "$URL_FILE" ] || { echo 'FAIL: marcador existente sem tunnel'; exit 1; }
 TEST_TUNNEL=live; TEST_HEALTH_STATUS=good; export TEST_TUNNEL TEST_HEALTH_STATUS
+# Com APP_URL ja alinhado, recuperar apenas o marker: um restart adicional
+# seria uma indisponibilidade desnecessaria e pode impedir a recuperacao.
+restarts_before=$(wc -l < "$TEST_RESTART_LOG" | tr -d ' ')
+TEST_RESTART_FAIL=1; export TEST_RESTART_FAIL
 reconcile_url
+[ "$(wc -l < "$TEST_RESTART_LOG" | tr -d ' ')" = "$restarts_before" ] || {
+  echo 'FAIL: recuperacao de marker reiniciou web sem mudar APP_URL'; exit 1;
+}
+unset TEST_RESTART_FAIL
 grep -qx 'https://live.trycloudflare.com' "$URL_FILE" || {
   echo 'FAIL: recuperacao nao republicou marcador'; exit 1;
 }
