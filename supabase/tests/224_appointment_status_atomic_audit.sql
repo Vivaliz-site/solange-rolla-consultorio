@@ -19,9 +19,9 @@ values
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"aa209000-0000-4000-8000-000000000001","aal":"aal2","role":"authenticated"}',true);
 
-select is((public.transition_staff_appointment_atomic(
+select is(public.transition_staff_appointment_atomic(
   'aa209000-0000-4000-8000-000000000010','scheduled','send_confirmation'
-)).status,'pending_confirmation','successful transition');
+),'pending_confirmation','successful transition');
 select is((select count(*)::int from public.appointment_status_history where appointment_id='aa209000-0000-4000-8000-000000000010'),1,'exactly one history');
 select is((select count(*)::int from public.audit_events where entity_id='aa209000-0000-4000-8000-000000000010' and action='appointment.status_changed'),1,'exactly one audit');
 

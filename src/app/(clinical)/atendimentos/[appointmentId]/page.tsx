@@ -129,15 +129,13 @@ async function startCareAction(formData: FormData) {
   const appointment = toAppointment(row)
   const repository: AppointmentStatusRepository = {
     async updateStatus(id, status) {
-      const { data, error: updateError } = await client.rpc('transition_staff_appointment_atomic' as never, {
+      const { data, error: updateError } = await client.rpc('transition_staff_appointment_atomic', {
         p_appointment_id: id,
         p_expected_status: 'checked_in',
         p_command: 'start',
-      } as never)
-      if (updateError || !data) throw new Error('CARE_START_CONFLICT')
-      const updated = data as unknown as Database['public']['Tables']['appointments']['Row']
-      if (updated.status !== status) throw new Error('CARE_START_CONFLICT')
-      return toAppointment(updated)
+      })
+      if (updateError || data !== status) throw new Error('CARE_START_CONFLICT')
+      return { ...appointment, status }
     },
   }
   await changeAppointmentStatus(appointment, 'start', repository)
@@ -264,15 +262,13 @@ async function finishCareAction(formData: FormData) {
   const appointment = toAppointment(row)
   const statusRepository: AppointmentStatusRepository = {
     async updateStatus(id, status) {
-      const { data, error: updateError } = await client.rpc('transition_staff_appointment_atomic' as never, {
+      const { data, error: updateError } = await client.rpc('transition_staff_appointment_atomic', {
         p_appointment_id: id,
         p_expected_status: 'in_progress',
         p_command: 'complete',
-      } as never)
-      if (updateError || !data) throw new Error('CARE_COMPLETE_CONFLICT')
-      const updated = data as unknown as Database['public']['Tables']['appointments']['Row']
-      if (updated.status !== status) throw new Error('CARE_COMPLETE_CONFLICT')
-      return toAppointment(updated)
+      })
+      if (updateError || data !== status) throw new Error('CARE_COMPLETE_CONFLICT')
+      return { ...appointment, status }
     },
   }
   await changeAppointmentStatus(appointment, 'complete', statusRepository)

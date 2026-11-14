@@ -32,4 +32,12 @@ describe('atomic appointment status and audit #209', () => {
     expect(migration).toMatch(/revoke all on function public\.transition_staff_appointment_atomic[^;]*from public,\s*anon/i)
     expect(migration).toMatch(/grant execute on function public\.transition_staff_appointment_atomic[^;]*to authenticated/i)
   })
+  it('uses the generated typed staff RPC and returns only the updated status', () => {
+    const types = readFileSync('src/platform/supabase/types.ts', 'utf8')
+    expect(types).toContain('transition_staff_appointment_atomic: {')
+    expect(agenda).not.toContain("'transition_staff_appointment_atomic' as never")
+    expect(care).not.toContain("'transition_staff_appointment_atomic' as never")
+    expect(migration).toMatch(/returns text/i)
+  })
+
 })

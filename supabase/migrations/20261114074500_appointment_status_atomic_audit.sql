@@ -5,7 +5,7 @@
 create or replace function public.transition_staff_appointment_atomic(
   p_appointment_id uuid, p_expected_status text, p_command text
 )
-returns public.appointments
+returns text
 language plpgsql
 security invoker
 set search_path = public
@@ -109,7 +109,7 @@ begin
     actor, action_name, 'appointment', p_appointment_id,
     p_appointment_id::text, audit_metadata
   );
-  return updated;
+  return next_status;
 end;
 $$;
 

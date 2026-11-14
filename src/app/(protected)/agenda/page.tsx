@@ -126,25 +126,13 @@ async function changeAppointmentStatusAction(formData: FormData) {
 
   const repository: AppointmentStatusRepository = {
     async updateStatus(id, status) {
-      const { data, error } = await client.rpc('transition_staff_appointment_atomic' as never, {
+      const { data, error } = await client.rpc('transition_staff_appointment_atomic', {
         p_appointment_id: id,
         p_expected_status: appointment.status,
         p_command: command,
-      } as never)
-      if (error || !data) throw new Error('AGENDA_STATUS_UPDATE_FAILED')
-      const updated = data as unknown as Database['public']['Tables']['appointments']['Row']
-      if (updated.status !== status) throw new Error('AGENDA_STATUS_CONFLICT')
-      return {
-        id: updated.id,
-        personId: updated.person_id,
-        serviceId: updated.service_id,
-        startsAt: updated.starts_at,
-        endsAt: updated.ends_at,
-        status: updated.status as Appointment['status'],
-        policyVersion: updated.policy_version,
-        cancellationDeadlineAt: updated.cancellation_deadline_at,
-        cancellationPolicy: normalizeCancellationPolicySnapshot(updated.cancellation_policy_snapshot),
-      }
+      })
+      if (error || data !== status) throw new Error('AGENDA_STATUS_UPDATE_FAILED')
+      return { ...appointment, status }
     },
   }
   await changeAppointmentStatus(appointment, command, repository)
