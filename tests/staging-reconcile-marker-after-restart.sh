@@ -26,6 +26,7 @@ export APP URL_FILE WEB TEST_RESTART_LOG
 log() { :; }
 app_valid() { [ -f "$APP/package.json" ] && [ -f "$APP/.env.production.local" ]; }
 current_tunnel_url() { printf '%s\n' 'https://live.trycloudflare.com'; }
+public_health_ok() { return 0; }
 . "$TMP/function.sh"
 PATH="$TMP/bin:$PATH"
 export PATH
@@ -33,8 +34,8 @@ export PATH
 TEST_RESTART_FAIL=1
 export TEST_RESTART_FAIL
 reconcile_url >/dev/null
-[ "$(cat "$URL_FILE")" = 'https://old.trycloudflare.com' ] || {
-  echo 'FAIL: marcador avancou apesar do restart falhar'
+[ ! -f "$URL_FILE" ] || {
+  echo 'FAIL: marcador nao invalidado apos restart falhar'
   exit 1
 }
 [ "$(cat "$APP/.env.production.local")" = 'APP_URL=https://live.trycloudflare.com' ] || {

@@ -576,3 +576,14 @@ Esta entrada cobre o código-fonte no SHA `2fe4699...` quanto aos checks locais 
 - Pendencias: executar regressao completa aplicavel, publicar PR tecnica, checks oficiais, integrar quando autorizado e validar release/main SHA; homologar UI #98. Migracao e backup gerenciado #191 exigem grant P2 efetivo, lease e provas de restore; nao declarar APTO.
 - Estado: NAO_APTO
 <!-- /AUDIT_DELTA_V1 -->
+
+<!-- AUDIT_DELTA_V1 -->
+## 2026-11-13 — [GPT] Corrigir falso-verde do marcador Quick Tunnel do staging (#268)
+
+- Base SHA: 5b8d02d91b9045f3865e22178b4f89cf0668aa31
+- Impacto: O reconciliador nao deve publicar nem manter o marcador de URL de staging para um Quick Tunnel sem health publico. A verificacao agora exercita DNS/TLS/HTTP 200 e contrato JSON de /api/health via Node 24 do container web, sem instalar dependencias nem alterar grants, DB, Auth, Storage, credenciais, protecoes ou servicos em producao. O marcador invalido e retirado e sua recuperacao e automatica, sem criar novo workflow/gate.
+- Testes: RED reproduzido no baseline com marcador indevido (task MCP d98dcb33-0579-4a18-abf4-8f72b6cf0f13, exit_code=1); GREEN e 3/3 testes de regressao staging aprovados (tasks f87ad7a9-2ff0-4c34-9a5d-6ec87f6cf1f7 e 61bf4b6e-06bf-4204-841a-537e277e358a). Na task c7930e8e-2676-4721-8cfa-439ab87e3087, exit_code=0: npm ci PASS; lint 0 errors/2 warnings preexistentes; typecheck PASS; build Next.js PASS; 757 testes PASS/1 SKIP; governanca absoluta PASS; diff --check PASS. Checks CI oficiais no GitHub e staging publicado ainda nao certificados.
+- Evidencias: issue https://github.com/Vivaliz-site/solange-rolla-consultorio/issues/268; alteracoes em ops/staging/reconcile-demo.sh, tests/staging-reconcile-public-health.sh e docs/operations/INCIDENT_RESPONSE.md. Testes isolados nunca acessaram dados clinicos, tokens nem staging real; execucao remota auditada no MCP.
+- Pendencias: checks oficiais e merge do HEAD exato; deploy do reconciliador em staging somente com gates de backup gerenciado autorizados e validados; E2E grafico de URL externa e #98; restore fonte real #191 e migracao Supabase apenas com P2/lease efetivos.
+- Estado: NAO_APTO
+<!-- /AUDIT_DELTA_V1 -->
